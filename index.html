@@ -1,0 +1,3356 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B7A9E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ghép Chữ Việt">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ghép Chữ Việt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Bố cục: cột bước bên trái, bàn sáng (nền chấm tông) ở giữa; khung được đánh dấu như bút chì xanh trên bản thảo. */
+:root {
+  --bg: #EDF0F4;
+  --panel: #FBFCFD;
+  --panel-2: #F1F4F8;
+  --ink: #151A22;
+  --ink-2: #566072;
+  --ink-3: #8691A3;
+  --line: #D6DDE6;
+  --accent: #0B7A9E;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #DAEEF5;
+  --mark: #E2492F;
+  --ok: #1B7F54;
+  --warn: #A8670F;
+  --bad: #BE3629;
+  --stage: #D4DAE3;
+  --dot: #C0C8D4;
+  --shadow: 0 2px 6px rgba(15, 25, 45, .18), 0 14px 34px rgba(15, 25, 45, .16);
+  --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1217; --panel: #161B22; --panel-2: #1C232C; --ink: #E7ECF3; --ink-2: #A0ABBB; --ink-3: #6F7A8B;
+    --line: #2A323D; --accent: #4DC3E6; --accent-ink: #06222B; --accent-soft: #12303B; --mark: #FF7A5C;
+    --ok: #46C38A; --warn: #E3A94B; --bad: #FF7D6E; --stage: #0A0D11; --dot: #1A212A;
+    --shadow: 0 2px 6px rgba(0, 0, 0, .5), 0 14px 34px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1217; --panel: #161B22; --panel-2: #1C232C; --ink: #E7ECF3; --ink-2: #A0ABBB; --ink-3: #6F7A8B;
+  --line: #2A323D; --accent: #4DC3E6; --accent-ink: #06222B; --accent-soft: #12303B; --mark: #FF7A5C;
+  --ok: #46C38A; --warn: #E3A94B; --bad: #FF7D6E; --stage: #0A0D11; --dot: #1A212A;
+  --shadow: 0 2px 6px rgba(0, 0, 0, .5), 0 14px 34px rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font);
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-text-size-adjust: 100%;
+}
+h1, h2, p, ul { margin: 0; padding: 0; }
+ul { list-style: none; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.app {
+  height: 100%; display: grid; gap: 12px;
+  grid-template-columns: minmax(300px, 352px) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "top top" "side main";
+}
+.top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; padding-inline: 2px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.logo { width: 34px; height: 34px; flex: none; }
+.logo .b { fill: var(--accent); }
+.logo text { fill: var(--accent-ink); font-family: var(--font); font-weight: 700; }
+.brand h1 { font-size: 18px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; }
+.brand p { color: var(--ink-2); font-size: 12.5px; }
+.privacy { color: var(--ink-2); font-size: 12.5px; }
+
+.side { grid-area: side; min-height: 0; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.main { grid-area: main; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+
+.step { padding: 14px 16px 16px; border-bottom: 1px solid var(--line); }
+.step:last-child { border-bottom: 0; }
+.step-h { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.step-h h2 { font-size: 14px; font-weight: 600; flex: 1; min-width: 0; }
+.num { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font: 500 12px var(--mono); background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); flex: none; }
+.step.done .num { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.step-b { display: flex; flex-direction: column; gap: 10px; }
+.help { color: var(--ink-2); font-size: 12.5px; line-height: 1.5; }
+.help b { color: var(--ink); font-weight: 600; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row > .btn { flex: 1 1 auto; }
+
+.chip { font-size: 11.5px; line-height: 1; padding: 5px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--ink-2); background: var(--panel-2); white-space: nowrap; }
+.chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.chip.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+.chip.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line); background: var(--panel); border-radius: 9px; font-weight: 500; line-height: 1.2; transition: background .12s, border-color .12s, filter .12s; }
+.btn:hover { background: var(--panel-2); border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); }
+.btn.ghost:hover { background: var(--accent-soft); }
+.btn.danger { color: var(--bad); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn svg, .seg svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; padding: 0 12px; min-height: 34px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button:hover { background: var(--panel-2); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg.wide { display: flex; }
+.seg.wide button { flex: 1; justify-content: center; }
+
+/* Bước 1: hai ô nhận ảnh */
+.zones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.drop { display: flex; flex-direction: column; gap: 2px; padding: 8px; border: 1.5px dashed var(--ink-3); border-radius: 10px; background: var(--panel-2); text-align: left; min-width: 0; transition: border-color .12s, background .12s; }
+.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop.has { border-style: solid; border-color: var(--line); background: var(--panel); }
+.drop strong { font-size: 13px; font-weight: 600; }
+.drop span { font-size: 12px; color: var(--ink-2); }
+.drop small { font: 400 11px var(--mono); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thumb { aspect-ratio: 3 / 4; max-height: 128px; width: 100%; border-radius: 6px; overflow: hidden; display: grid; place-items: center; background: repeating-conic-gradient(var(--panel-2) 0 25%, var(--line) 0 50%) 0 0 / 12px 12px; margin-bottom: 6px; }
+.thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.thumb svg { width: 26px; height: 26px; fill: none; stroke: var(--ink-3); stroke-width: 1.6; stroke-linecap: round; }
+
+/* Bước 2: căn ảnh */
+.readout { font: 400 12px/1.6 var(--mono); color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.nudge { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.dpad { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 30px); gap: 3px; }
+.dpad button, .scalebtns button { border: 1px solid var(--line); background: var(--panel); border-radius: 7px; font-size: 15px; line-height: 1; }
+.dpad button:hover, .scalebtns button:hover { background: var(--panel-2); border-color: var(--ink-3); }
+.dpad [data-n="0,-1"] { grid-column: 2; grid-row: 1; }
+.dpad [data-n="-1,0"] { grid-column: 1; grid-row: 2; }
+.dpad [data-n="1,0"] { grid-column: 3; grid-row: 2; }
+.dpad [data-n="0,1"] { grid-column: 2; grid-row: 3; }
+.scalebtns { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 12.5px; }
+.scalebtns button { width: 34px; height: 30px; }
+
+/* Bước 3: danh sách khung */
+.slider { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; font-size: 12.5px; color: var(--ink-2); }
+.slider input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
+.slider output { font: 500 12px var(--mono); color: var(--ink); }
+.regions { display: flex; flex-direction: column; gap: 4px; max-height: 232px; overflow: auto; padding: 2px; margin: -2px; }
+.reg { display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); padding: 2px 4px 2px 8px; }
+.reg.sel { border-color: var(--mark); box-shadow: 0 0 0 1px var(--mark); }
+.reg.off .rmain { opacity: .5; }
+.reg input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; flex: none; }
+.rmain { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; text-align: left; padding: 6px 4px; }
+.rn { font: 500 11.5px var(--mono); min-width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: var(--accent); color: var(--accent-ink); }
+.reg.sel .rn { background: var(--mark); color: #fff; }
+.reg.off .rn { background: var(--ink-3); }
+.rt { flex: 1; min-width: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rs { font: 400 11.5px var(--mono); color: var(--ink-3); }
+.rdel { border: 0; background: transparent; width: 30px; height: 30px; border-radius: 7px; font-size: 18px; line-height: 1; color: var(--ink-3); }
+.rdel:hover { background: var(--panel-2); color: var(--bad); }
+.reg-empty { color: var(--ink-2); font-size: 12.5px; padding: 8px 2px; }
+.insp { display: flex; flex-direction: column; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.insp-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.insp-h strong { font-weight: 600; }
+.switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.switch input, .colorrow input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.field select, .field input[type="number"] { min-height: 34px; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 0 8px; }
+.xy { display: flex; gap: 8px; }
+.xy label { display: flex; align-items: center; gap: 6px; flex: 1; font: 500 12px var(--mono); color: var(--ink-2); }
+.xy input { width: 100%; min-width: 0; font-family: var(--mono); }
+.colorrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.colorrow label { display: flex; align-items: center; gap: 6px; }
+.colorrow input[type="color"] { width: 44px; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); padding: 2px; }
+.fallback { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.fallback img { width: 100%; max-height: 260px; object-fit: contain; background: #fff; border-radius: 6px; }
+
+/* Thanh công cụ + bàn sáng */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.bar .sp { flex: 1; }
+.chk { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); cursor: pointer; margin: 0 0 10px; }
+.chk input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+.bar .seg { flex: none; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.bar .seg button { padding: 0 10px; }
+@media (max-width: 520px) { .bar .seg button svg { display: none; } }
+.zoom { display: inline-flex; align-items: center; gap: 4px; }
+.zoom button { min-width: 34px; min-height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.zoom button:hover { background: var(--panel-2); }
+.zoom .zv { min-width: 62px; font: 500 12px var(--mono); }
+.stage { position: relative; flex: 1; min-height: 0; background-color: var(--stage); background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.5px); background-size: 9px 9px; }
+.scroller { position: absolute; inset: 0; overflow: auto; display: flex; padding: 22px; cursor: grab; overscroll-behavior: contain; }
+.scroller.t-bubble, .scroller.t-rect, .scroller.t-lasso { cursor: crosshair; }
+.scroller.t-rect, .scroller.t-lasso { touch-action: none; }
+.scroller.panning { cursor: grabbing; }
+.sheet { margin: auto; flex: none; position: relative; background: #fff; box-shadow: var(--shadow); }
+.sheet canvas { display: block; width: 100%; height: 100%; }
+.sheet.crisp canvas { image-rendering: pixelated; }
+.over { position: absolute; left: 0; top: 0; pointer-events: none; }
+.busy { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--stage) 72%, transparent); z-index: 5; }
+.busy-card { display: flex; flex-direction: column; gap: 10px; min-width: 240px; padding: 16px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); font-weight: 500; }
+.bar-track { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar-fill { height: 100%; width: 8%; background: var(--accent); border-radius: 4px; transition: width .2s; }
+.tag { position: absolute; top: 12px; left: 12px; z-index: 3; padding: 5px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--mark); color: #fff; pointer-events: none; }
+.status { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 7px 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-2); background: var(--panel); }
+.status .mono { color: var(--ink-3); }
+.status #hint { flex: 1; min-width: 0; }
+.status .ovt { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 12px); max-width: min(92vw, 520px); padding: 10px 14px; border-radius: 10px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 500; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 50; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.warn { background: var(--warn); color: #fff; }
+
+/* Nhiều trang */
+.pages { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px 6px; border-top: 1px solid var(--line); background: var(--panel); }
+.pg-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.pg-head .sp { flex: 1; }
+.pg-head .btn { min-height: 32px; padding: 0 12px; }
+.pg-nav { display: inline-flex; align-items: center; gap: 6px; }
+.pg-nav button { min-width: 32px; min-height: 32px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.pg-nav button:hover:not(:disabled) { background: var(--panel-2); border-color: var(--ink-3); }
+.pg-nav button:disabled { opacity: .45; cursor: not-allowed; }
+.pg-title { min-width: 92px; text-align: center; font: 600 12.5px var(--mono); }
+.pg-sum { color: var(--ink-2); font-size: 12px; }
+.pg-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; }
+.pg-item { position: relative; flex: none; width: 50px; padding: 0; border: 2px solid var(--line); border-radius: 7px; background: var(--panel-2); overflow: hidden; }
+.pg-item img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+.pg-item.cur { border-color: var(--mark); box-shadow: 0 0 0 1px var(--mark); }
+.pg-item .n { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; text-align: center; font: 500 11px var(--mono); background: color-mix(in srgb, var(--ink) 72%, transparent); color: var(--bg); }
+.pg-item .d { position: absolute; top: 3px; right: 3px; width: 10px; height: 10px; border-radius: 50%; background: var(--ink-3); border: 1.5px solid var(--panel); }
+.pg-item.ready .d { background: var(--ok); }
+.pg-item.warn .d { background: var(--warn); }
+.pg-item.err .d { background: var(--bad); }
+.pg-item.work .d { background: var(--accent); }
+.busy-card .btn { align-self: flex-start; min-height: 32px; }
+.fallback a.btn { text-decoration: none; }
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; grid-template-areas: "top" "main" "side"; }
+  .main { height: min(76vh, 680px); }
+  .side { overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 34 34" aria-hidden="true"><path class="b" d="M6 5h22a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H16l-7 5.5V25H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z"/><text x="17" y="20.2" text-anchor="middle" font-size="13">Ữ</text></svg>
+      <div>
+        <h1>Ghép Chữ Việt</h1>
+        <p>Lấy chữ Việt từ ảnh đen trắng, đặt vào ảnh màu thay chữ Nhật</p>
+      </div>
+    </div>
+    <p class="privacy">Ảnh được xử lý ngay trong trình duyệt của bạn, không gửi đi đâu.</p>
+  </header>
+
+  <aside class="side" aria-label="Các bước thực hiện">
+    <section class="step" id="step1">
+      <header class="step-h"><span class="num">1</span><h2>Nạp ảnh</h2><span class="chip" id="chip1">Chưa có ảnh</span></header>
+      <div class="step-b">
+        <div class="zones">
+          <div class="drop" id="dropBw" role="button" tabindex="0" aria-label="Chọn ảnh đen trắng có chữ Việt">
+            <div class="thumb"><img id="thBw" alt="Ảnh đen trắng" hidden><svg id="plBw" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>
+            <strong>Ảnh đen trắng</strong><span>có chữ Việt</span><small id="metaBw">Bấm, kéo thả hoặc dán</small>
+          </div>
+          <div class="drop" id="dropCol" role="button" tabindex="0" aria-label="Chọn ảnh màu có chữ Nhật">
+            <div class="thumb"><img id="thCol" alt="Ảnh màu" hidden><svg id="plCol" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>
+            <strong>Ảnh màu</strong><span>có chữ Nhật</span><small id="metaCol">Bấm, kéo thả hoặc dán</small>
+          </div>
+        </div>
+        <input id="fileBw" type="file" accept="image/*" multiple hidden>
+        <input id="fileCol" type="file" accept="image/*" multiple hidden>
+        <input id="fileAny" type="file" accept="image/*" multiple hidden>
+        <div class="row">
+          <button class="btn" id="btnPickBoth" type="button">Chọn ảnh (một hoặc nhiều trang)…</button>
+          <button class="btn ghost" id="btnSample" type="button">Xem ảnh mẫu</button>
+        </div>
+        <p class="help">Thả cả hai ảnh cùng lúc cũng được, web tự nhận ảnh màu. <b>Cả chương:</b> thả nhiều ảnh cùng lúc (hoặc cả loạt vào từng ô). Web ghép cặp đen trắng và màu theo số trang trong tên tệp, ví dụ 012.jpg ↔ 012.png.</p>
+      </div>
+    </section>
+
+    <section class="step" id="step2">
+      <header class="step-h"><span class="num">2</span><h2>Căn hai ảnh cho khớp</h2><span class="chip" id="chip2">Chờ ảnh</span></header>
+      <div class="step-b">
+        <p class="readout" id="alignInfo">Chưa căn.</p>
+        <label class="chk" title="Ảnh quét thường bị xoay nhẹ hoặc cong. Bật để web bù lệch riêng từng vùng của trang."><input type="checkbox" id="chkWarp" checked> Bù xoay và méo cục bộ</label>
+        <div class="row">
+          <button class="btn" id="btnAlign" type="button">Căn lại tự động</button>
+          <button class="btn" id="btnAlignReset" type="button">Về kết quả tự động</button>
+        </div>
+        <div class="nudge">
+          <div class="dpad" role="group" aria-label="Nhích ảnh đen trắng">
+            <button type="button" data-n="0,-1" aria-label="Nhích lên">↑</button>
+            <button type="button" data-n="-1,0" aria-label="Nhích sang trái">←</button>
+            <button type="button" data-n="1,0" aria-label="Nhích sang phải">→</button>
+            <button type="button" data-n="0,1" aria-label="Nhích xuống">↓</button>
+          </div>
+          <div class="scalebtns" role="group" aria-label="Phóng thu ảnh đen trắng"><span>Tỉ lệ</span><button type="button" data-s="-1" aria-label="Thu nhỏ">−</button><button type="button" data-s="1" aria-label="Phóng to">+</button></div>
+        </div>
+        <p class="help">Thấy nét bị đôi? Chuyển sang chế độ <b>Chồng ảnh</b> ở thanh trên khung xem rồi nhích từng chút. Giữ Shift để nhích nhanh gấp 10 lần.</p>
+      </div>
+    </section>
+
+    <section class="step" id="step3">
+      <header class="step-h"><span class="num">3</span><h2>Chọn khung thoại</h2><span class="chip" id="chip3">Chưa có khung</span></header>
+      <div class="step-b">
+        <button class="btn primary" id="btnDetect" type="button">Tự tìm khung thoại</button>
+        <label class="slider"><span>Độ nhạy nền khung</span><output id="tolO">26</output><input type="range" id="tolR" min="10" max="60" step="1" value="26"></label>
+        <label class="chk" title="Tìm ô chữ có nền màu phẳng ở ảnh màu (ô dẫn truyện vàng, khung xanh…) nếu ảnh đen trắng có ô trắng tương ứng, ví dụ ô có chữ Việt. Bỏ chọn nếu web bắt nhầm."><input type="checkbox" id="chkTint" checked> Tìm cả ô nền màu (vàng, xanh…)</label>
+        <p class="help">Ô không được tìm thấy, hoặc chữ nằm trên tranh: chọn công cụ <b>Bấm khung</b>, <b>Ô chữ nhật</b> hay <b>Vẽ tay</b> trên thanh công cụ rồi chỉ vào khung đó. SFX không bị đụng tới.</p>
+        <ul class="regions" id="regionList" aria-label="Danh sách khung"></ul>
+        <div class="insp" id="insp" hidden>
+          <div class="insp-h"><strong id="inspTitle">Khung 1</strong><label class="switch"><input type="checkbox" id="inEnable"> Áp dụng</label></div>
+          <div class="field"><span>Cách xoá chữ Nhật</span>
+            <div class="seg wide" id="inFill" role="group" aria-label="Cách xoá chữ Nhật"><button type="button" data-v="flat" aria-pressed="true">Tô phẳng</button><button type="button" data-v="inpaint" aria-pressed="false">Nội suy nền</button></div>
+          </div>
+          <label class="slider"><span>Độ đậm chữ Việt</span><output id="inSensO">0</output><input type="range" id="inSens" min="-30" max="30" step="1" value="0"></label>
+          <label class="slider" id="rowGrow"><span>Mở rộng vùng xoá</span><output id="inGrowO">2</output><input type="range" id="inGrow" min="0" max="10" step="1" value="2"></label>
+          <div class="field"><span>Dịch chữ Việt (px, phải và xuống là dương)</span>
+            <div class="xy"><label>X <input type="number" id="inDx" step="1" min="-80" max="80" value="0"></label><label>Y <input type="number" id="inDy" step="1" min="-80" max="80" value="0"></label></div>
+          </div>
+          <div class="field"><span>Màu chữ Việt</span>
+            <div class="colorrow"><label><input type="checkbox" id="inAutoColor" checked> Lấy theo chữ gốc</label><input type="color" id="inColor" value="#000000" aria-label="Chọn màu chữ"></div>
+          </div>
+          <div class="field"><span>Kiểu nền khung</span>
+            <select id="inInvert"><option value="auto">Tự nhận</option><option value="off">Nền sáng, chữ tối</option><option value="on">Nền tối, chữ sáng</option></select>
+          </div>
+          <button class="btn danger" id="inDelete" type="button">Xoá khung này</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="step4">
+      <header class="step-h"><span class="num">4</span><h2>Xuất ảnh</h2><span class="chip" id="chip4">Chưa sẵn sàng</span></header>
+      <div class="step-b">
+        <div class="seg wide" id="fmtSeg" role="group" aria-label="Định dạng"><button type="button" data-v="png" aria-pressed="true">PNG</button><button type="button" data-v="jpg" aria-pressed="false">JPG</button></div>
+        <label class="slider" id="qRow" hidden><span>Chất lượng JPG</span><output id="qO">95</output><input type="range" id="qR" min="60" max="100" step="1" value="95"></label>
+        <button class="btn primary" id="btnSave" type="button">Tải ảnh đã ghép</button>
+        <button class="btn" id="btnSaveLayer" type="button">Tải lớp chữ (PNG nền trong suốt)</button>
+        <p class="help">Lớp chữ chỉ gồm phần đã thay, đặt chồng lên ảnh màu gốc trong Photoshop hay Clip Studio để chỉnh tiếp. Vùng chưa chọn vẫn giữ nguyên chữ Nhật cho bạn tự xử lý SFX.</p>
+        <div class="fallback" id="fallback" hidden>
+          <p class="help" id="fbMsg">Trình duyệt này chưa cho tải trực tiếp. Bấm giữ hoặc bấm chuột phải vào ảnh bên dưới rồi chọn lưu ảnh.</p>
+          <img id="fbImg" alt="Ảnh kết quả để lưu"><a class="btn" id="fbLink" hidden>Tải tệp</a>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <main class="main" aria-label="Khung xem ảnh">
+    <div class="bar">
+      <div class="seg" id="toolSeg" role="group" aria-label="Công cụ chọn khung">
+        <button type="button" data-v="select" aria-pressed="true" title="Chọn và di chuyển (V)"><svg viewBox="0 0 24 24"><path d="M6 3.5l12 7.2-5.4 1.5L9.8 18z"/></svg>Chọn</button>
+        <button type="button" data-v="bubble" aria-pressed="false" title="Bấm vào bên trong khung thoại (B)"><svg viewBox="0 0 24 24"><path d="M4 5h16v10h-8l-4 4v-4H4z"/></svg>Bấm khung</button>
+        <button type="button" data-v="rect" aria-pressed="false" title="Kéo ô chữ nhật (R)"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" stroke-dasharray="3 2.4"/></svg>Ô chữ nhật</button>
+        <button type="button" data-v="lasso" aria-pressed="false" title="Vẽ tay quanh chữ (L)"><svg viewBox="0 0 24 24"><path d="M12 5c4.4 0 8 1.9 8 4.5S16.4 14 12 14 4 12.1 4 9.5 7.6 5 12 5z"/><path d="M9.5 13.6c-.3 2.8.8 4.4 3 5.4"/></svg>Vẽ tay</button>
+      </div>
+      <div class="seg" id="viewSeg" role="group" aria-label="Chế độ xem">
+        <button type="button" data-v="result" aria-pressed="true" title="Kết quả (1)">Kết quả</button>
+        <button type="button" data-v="color" aria-pressed="false" title="Ảnh màu gốc (2)">Màu gốc</button>
+        <button type="button" data-v="bw" aria-pressed="false" title="Ảnh đen trắng đã căn (3)">Đen trắng</button>
+        <button type="button" data-v="overlay" aria-pressed="false" title="Chồng hai ảnh để kiểm tra độ khớp (4)">Chồng ảnh</button>
+      </div>
+      <span class="sp"></span>
+      <div class="zoom" role="group" aria-label="Thu phóng">
+        <button type="button" id="zOut" aria-label="Thu nhỏ">−</button>
+        <button type="button" id="zFit" class="zv" aria-label="Vừa khung xem">Vừa</button>
+        <button type="button" id="zIn" aria-label="Phóng to">+</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="scroller t-select" id="scroller">
+        <div class="sheet" id="sheet"><canvas id="view" width="4" height="4"></canvas></div>
+      </div>
+      <canvas class="over" id="over"></canvas>
+      <div class="tag" id="sampleTag" hidden>Ảnh mẫu</div>
+      <div class="busy" id="busy" hidden>
+        <div class="busy-card" role="status"><span id="busyMsg">Đang xử lý…</span><div class="bar-track"><div class="bar-fill" id="busyBar"></div></div><button type="button" class="btn" id="busyCancel" hidden>Dừng</button></div>
+      </div>
+    </div>
+    <div class="pages" id="pagesBar" hidden>
+      <div class="pg-head">
+        <div class="pg-nav"><button type="button" id="pgPrev" aria-label="Trang trước" title="Trang trước ( [ )">◀</button><span class="pg-title" id="pgTitle">Trang 1/1</span><button type="button" id="pgNext" aria-label="Trang sau" title="Trang sau ( ] )">▶</button></div>
+        <span class="pg-sum" id="pgSum"></span>
+        <span class="sp"></span>
+        <button class="btn" type="button" id="pgProc">Xử lý các trang còn lại</button>
+        <button class="btn primary" type="button" id="pgZip">Tải tất cả (ZIP)</button>
+      </div>
+      <div class="pg-strip" id="pgStrip" role="listbox" aria-label="Các trang"></div>
+    </div>
+    <div class="status"><span id="hint">Bấm vào khung để chọn. Kéo để di chuyển ảnh. Ctrl + lăn chuột để thu phóng.</span><label class="ovt" title="Hiện hoặc ẩn viền và lớp phủ các khung (O)"><input type="checkbox" id="ovChk" checked> Hiện viền khung</label><span class="mono" id="coord">—</span></div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* GCV core — thuật toán xử lý ảnh, không phụ thuộc DOM (chạy được trong Node để kiểm thử). */
+(function (G) {
+'use strict';
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const yieldUI = () => new Promise((r) => setTimeout(r, 0));
+
+/* ------------------------------------------------------------------ cơ bản */
+function rgbaToGray(rgba, n) {
+  const g = new Uint8Array(n);
+  for (let i = 0, j = 0; i < n; i++, j += 4) {
+    g[i] = (rgba[j] * 77 + rgba[j + 1] * 150 + rgba[j + 2] * 29 + 128) >> 8;
+  }
+  return g;
+}
+
+function colorfulness(rgba, w, h) {
+  const step = Math.max(1, Math.floor(Math.sqrt((w * h) / 40000)));
+  let s = 0, c = 0;
+  for (let y = 0; y < h; y += step) {
+    for (let x = 0; x < w; x += step) {
+      const i = (y * w + x) * 4;
+      const r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
+      s += Math.max(r, g, b) - Math.min(r, g, b);
+      c++;
+    }
+  }
+  return s / Math.max(1, c);
+}
+
+function buildSpans(sn, dn) {
+  const scale = sn / dn;
+  const idx = [], wt = [];
+  const off = new Int32Array(dn + 1);
+  for (let d = 0; d < dn; d++) {
+    off[d] = idx.length;
+    const a = d * scale, b = (d + 1) * scale;
+    const iend = Math.min(sn, Math.ceil(b));
+    for (let i = Math.floor(a); i < iend; i++) {
+      const w = Math.min(i + 1, b) - Math.max(i, a);
+      if (w > 1e-9) { idx.push(i); wt.push(w / scale); }
+    }
+  }
+  off[dn] = idx.length;
+  return { off, idx: Int32Array.from(idx), wt: Float32Array.from(wt) };
+}
+
+// Thu nhỏ theo diện tích (area average), trả về Float32Array
+function resizeArea(src, sw, sh, dw, dh) {
+  dw = Math.max(1, dw | 0); dh = Math.max(1, dh | 0);
+  const hx = buildSpans(sw, dw), vy = buildSpans(sh, dh);
+  const tmp = new Float32Array(dw * sh);
+  for (let y = 0; y < sh; y++) {
+    const row = y * sw, trow = y * dw;
+    for (let d = 0; d < dw; d++) {
+      let acc = 0;
+      for (let k = hx.off[d]; k < hx.off[d + 1]; k++) acc += src[row + hx.idx[k]] * hx.wt[k];
+      tmp[trow + d] = acc;
+    }
+  }
+  const out = new Float32Array(dw * dh);
+  for (let d = 0; d < dh; d++) {
+    const orow = d * dw;
+    for (let k = vy.off[d]; k < vy.off[d + 1]; k++) {
+      const wgt = vy.wt[k], trow = vy.idx[k] * dw;
+      for (let x = 0; x < dw; x++) out[orow + x] += tmp[trow + x] * wgt;
+    }
+  }
+  return out;
+}
+
+function boxBlur(a, w, h, r) {
+  if (r < 1) return a;
+  const tmp = new Float32Array(Math.max(w, h));
+  const inv = 1 / (2 * r + 1);
+  for (let y = 0; y < h; y++) {
+    const o = y * w;
+    let acc = 0;
+    for (let i = -r; i <= r; i++) acc += a[o + clamp(i, 0, w - 1)];
+    for (let x = 0; x < w; x++) {
+      tmp[x] = acc * inv;
+      acc += a[o + Math.min(w - 1, x + r + 1)] - a[o + Math.max(0, x - r)];
+    }
+    for (let x = 0; x < w; x++) a[o + x] = tmp[x];
+  }
+  for (let x = 0; x < w; x++) {
+    let acc = 0;
+    for (let i = -r; i <= r; i++) acc += a[clamp(i, 0, h - 1) * w + x];
+    for (let y = 0; y < h; y++) {
+      tmp[y] = acc * inv;
+      acc += a[Math.min(h - 1, y + r + 1) * w + x] - a[Math.max(0, y - r) * w + x];
+    }
+    for (let y = 0; y < h; y++) a[y * w + x] = tmp[y];
+  }
+  return a;
+}
+
+function featureMap(a, w, h) {
+  boxBlur(a, w, h, 1);
+  const e = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const gx = (a[i - w + 1] + 2 * a[i + 1] + a[i + w + 1]) - (a[i - w - 1] + 2 * a[i - 1] + a[i + w - 1]);
+      const gy = (a[i + w - 1] + 2 * a[i + w] + a[i + w + 1]) - (a[i - w - 1] + 2 * a[i - w] + a[i - w + 1]);
+      e[i] = Math.sqrt(Math.sqrt(gx * gx + gy * gy));
+    }
+  }
+  boxBlur(e, w, h, 1);
+  return e;
+}
+
+function boxDown(src, w, h, n) {
+  const nw = Math.floor(w / n), nh = Math.floor(h / n);
+  const out = new Uint8Array(nw * nh);
+  const area = n * n;
+  for (let y = 0; y < nh; y++) {
+    for (let x = 0; x < nw; x++) {
+      let acc = 0;
+      for (let dy = 0; dy < n; dy++) {
+        const row = (y * n + dy) * w + x * n;
+        for (let dx = 0; dx < n; dx++) acc += src[row + dx];
+      }
+      out[y * nw + x] = (acc / area + 0.5) | 0;
+    }
+  }
+  return { data: out, w: nw, h: nh };
+}
+
+/* ---------------------------------------------------------- căn hai ảnh */
+function nccEval(L, rect) {
+  const f = L.f;
+  const ox = rect.ox * f, oy = rect.oy * f, rw = rect.rw * f, rh = rect.rh * f;
+  if (rw < 8 || rh < 8) return -1;
+  const cw = L.cw, ch = L.ch, bw = L.bw, bh = L.bh;
+  const x0 = Math.max(0, Math.ceil(ox)), x1 = Math.min(cw, Math.floor(ox + rw));
+  const y0 = Math.max(0, Math.ceil(oy)), y1 = Math.min(ch, Math.floor(oy + rh));
+  if (x1 - x0 < 6 || y1 - y0 < 6) return -1;
+  const overlap = (x1 - x0) * (y1 - y0);
+  if (overlap < 0.55 * Math.min(cw * ch, rw * rh)) return -1;
+  const kx = bw / rw, ky = bh / rh;
+  const FC = L.FC, FB = L.FB;
+  let n = 0, sC = 0, sB = 0, sCC = 0, sBB = 0, sCB = 0;
+  for (let y = y0; y < y1; y++) {
+    const v = clamp((y + 0.5 - oy) * ky - 0.5, 0, bh - 1);
+    const v0 = v | 0, v1 = Math.min(bh - 1, v0 + 1), fy = v - v0;
+    const r0 = v0 * bw, r1 = v1 * bw, crow = y * cw;
+    for (let x = x0; x < x1; x++) {
+      const u = clamp((x + 0.5 - ox) * kx - 0.5, 0, bw - 1);
+      const u0 = u | 0, u1 = Math.min(bw - 1, u0 + 1), fx = u - u0;
+      const top = FB[r0 + u0] * (1 - fx) + FB[r0 + u1] * fx;
+      const bot = FB[r1 + u0] * (1 - fx) + FB[r1 + u1] * fx;
+      const b = top * (1 - fy) + bot * fy;
+      const c = FC[crow + x];
+      n++; sC += c; sB += b; sCC += c * c; sBB += b * b; sCB += c * b;
+    }
+  }
+  const vc = sCC - (sC * sC) / n, vb = sBB - (sB * sB) / n;
+  if (vc <= 1e-6 || vb <= 1e-6) return -1;
+  return (sCB - (sC * sB) / n) / Math.sqrt(vc * vb);
+}
+
+function descend(L, rect, steps) {
+  let cur = rect;
+  let score = nccEval(L, cur);
+  for (const d of steps) {
+    const dl = d / L.f;
+    for (let it = 0; it < 40; it++) {
+      const cx = cur.ox + cur.rw / 2, cy = cur.oy + cur.rh / 2;
+      const uni = (g) => ({ ox: cx - (cur.rw * g) / 2, oy: cy - (cur.rh * g) / 2, rw: cur.rw * g, rh: cur.rh * g });
+      const g1 = 1 + dl / cur.rw, g2 = 1 - dl / cur.rw;
+      const moves = [
+        { ox: cur.ox + dl, oy: cur.oy, rw: cur.rw, rh: cur.rh },
+        { ox: cur.ox - dl, oy: cur.oy, rw: cur.rw, rh: cur.rh },
+        { ox: cur.ox, oy: cur.oy + dl, rw: cur.rw, rh: cur.rh },
+        { ox: cur.ox, oy: cur.oy - dl, rw: cur.rw, rh: cur.rh },
+        uni(g1), uni(g2),
+        { ox: cur.ox - dl / 2, oy: cur.oy, rw: cur.rw + dl, rh: cur.rh },
+        { ox: cur.ox + dl / 2, oy: cur.oy, rw: cur.rw - dl, rh: cur.rh },
+        { ox: cur.ox, oy: cur.oy - dl / 2, rw: cur.rw, rh: cur.rh + dl },
+        { ox: cur.ox, oy: cur.oy + dl / 2, rw: cur.rw, rh: cur.rh - dl },
+      ];
+      let bm = null, bs = score;
+      for (const mv of moves) {
+        const s = nccEval(L, mv);
+        if (s > bs + 1e-5) { bs = s; bm = mv; }
+      }
+      if (!bm) break;
+      cur = bm; score = bs;
+    }
+  }
+  return { rect: cur, score };
+}
+
+// Trả về hình chữ nhật {ox,oy,rw,rh} (toạ độ ảnh màu) nơi ảnh đen trắng được đặt vào.
+async function alignImages(grayC, wC, hC, grayB, wB, hB, onProgress, opts) {
+  const prog = (p, m) => { if (onProgress) onProgress(p, m); };
+  const widths = [64, 128, 256, 640].filter((w) => w <= wC);
+  if (!widths.length) widths.push(wC);
+  const levels = [];
+  for (let k = 0; k < widths.length; k++) {
+    const cw = widths[k];
+    const ch = Math.max(8, Math.round((cw * hC) / wC));
+    const bw = Math.max(8, Math.min(cw, wB));
+    const bh = Math.max(8, Math.round((bw * hB) / wB));
+    const FC = featureMap(resizeArea(grayC, wC, hC, cw, ch), cw, ch);
+    const FB = featureMap(resizeArea(grayB, wB, hB, bw, bh), bw, bh);
+    levels.push({ cw, ch, bw, bh, FC, FB, f: cw / wC });
+    prog(0.05 + 0.2 * (k + 1) / widths.length, 'Đang phân tích nét vẽ…');
+    await yieldUI();
+  }
+  const L0 = levels[0];
+  const sW = wC / wB, sH = hC / hB;
+  const bases = Math.abs(sW / sH - 1) > 0.02 ? [sW, sH] : [(sW + sH) / 2];
+  const mults = [0.82, 0.88, 0.94, 1, 1.06, 1.13, 1.2];
+  let best = { score: -2, rect: { ox: 0, oy: 0, rw: wC, rh: hC } };
+  const stepX = wC / L0.cw, stepY = hC / L0.ch;
+  const rng = Math.max(4, Math.round(L0.cw * 0.2));
+  for (const base of bases) {
+    for (const m of mults) {
+      const s = base * m, rw = s * wB, rh = s * hB;
+      const cx0 = (wC - rw) / 2, cy0 = (hC - rh) / 2;
+      for (let iy = -rng; iy <= rng; iy++) {
+        for (let ix = -rng; ix <= rng; ix++) {
+          const rect = { ox: cx0 + ix * stepX, oy: cy0 + iy * stepY, rw, rh };
+          const sc = nccEval(L0, rect);
+          if (sc > best.score) best = { score: sc, rect };
+        }
+      }
+    }
+    await yieldUI();
+  }
+  prog(0.5, 'Đang căn tinh…');
+  const stepsFor = [[2, 1, 0.5], [2, 1, 0.5], [1, 0.5], [1, 0.5, 0.25]];
+  let cur = best.rect, score = best.score;
+  for (let k = 0; k < levels.length; k++) {
+    const r = descend(levels[k], cur, stepsFor[Math.min(k, stepsFor.length - 1)]);
+    cur = r.rect; score = r.score;
+    prog(0.5 + 0.05 * (k + 1) / levels.length, 'Đang căn tinh…');
+    await yieldUI();
+  }
+  const out = { ox: cur.ox, oy: cur.oy, rw: cur.rw, rh: cur.rh, score, wB, hB };
+  if (!opts || opts.warp !== false) {
+    const rf = await refineWarp(grayC, wC, hC, grayB, wB, hB, out, (p, m) => prog(0.55 + 0.45 * p, m), opts);
+    out.info = rf.info;
+    if (rf.warp) { out.warp = rf.warp; out.score = rf.score; }
+  }
+  return out;
+}
+
+/* ------------------------------------------------ lấy mẫu chất lượng cao & độ méo cục bộ */
+// Nội suy bicubic (Catmull-Rom). u, v: toạ độ chỉ số (tâm điểm ảnh ở số nguyên), kẹp ở mép.
+function cubicAt(a, sw, sh, u, v) {
+  const iu = Math.floor(u), iv = Math.floor(v);
+  const tu = u - iu, tv = v - iv;
+  const tu2 = tu * tu, tu3 = tu2 * tu, tv2 = tv * tv, tv3 = tv2 * tv;
+  const a0 = -0.5 * tu3 + tu2 - 0.5 * tu, a1 = 1.5 * tu3 - 2.5 * tu2 + 1, a2 = -1.5 * tu3 + 2 * tu2 + 0.5 * tu, a3 = 0.5 * tu3 - 0.5 * tu2;
+  const b0 = -0.5 * tv3 + tv2 - 0.5 * tv, b1 = 1.5 * tv3 - 2.5 * tv2 + 1, b2 = -1.5 * tv3 + 2 * tv2 + 0.5 * tv, b3 = 0.5 * tv3 - 0.5 * tv2;
+  const mx = sw - 1, my = sh - 1;
+  const x0 = iu - 1 < 0 ? 0 : iu - 1 > mx ? mx : iu - 1, x1 = iu < 0 ? 0 : iu > mx ? mx : iu;
+  const x2 = iu + 1 < 0 ? 0 : iu + 1 > mx ? mx : iu + 1, x3 = iu + 2 < 0 ? 0 : iu + 2 > mx ? mx : iu + 2;
+  const y0 = iv - 1 < 0 ? 0 : iv - 1 > my ? my : iv - 1, y1 = iv < 0 ? 0 : iv > my ? my : iv;
+  const y2 = iv + 1 < 0 ? 0 : iv + 1 > my ? my : iv + 1, y3 = iv + 2 < 0 ? 0 : iv + 2 > my ? my : iv + 2;
+  const r0 = y0 * sw, r1 = y1 * sw, r2 = y2 * sw, r3 = y3 * sw;
+  return (a[r0 + x0] * a0 + a[r0 + x1] * a1 + a[r0 + x2] * a2 + a[r0 + x3] * a3) * b0 +
+    (a[r1 + x0] * a0 + a[r1 + x1] * a1 + a[r1 + x2] * a2 + a[r1 + x3] * a3) * b1 +
+    (a[r2 + x0] * a0 + a[r2 + x1] * a1 + a[r2 + x2] * a2 + a[r2 + x3] * a3) * b2 +
+    (a[r3 + x0] * a0 + a[r3 + x1] * a1 + a[r3 + x2] * a2 + a[r3 + x3] * a3) * b3;
+}
+
+// Độ dời cục bộ (điểm ảnh MÀU) tại (x, y) ảnh màu, nội suy song tuyến từ lưới thưa. Kết quả ở _wd[0], _wd[1].
+const _wd = new Float64Array(2);
+function warpAt(wp, x, y) {
+  let gx = (x - wp.x0) / wp.step, gy = (y - wp.y0) / wp.step;
+  gx = gx < 0 ? 0 : gx > wp.nx - 1.0001 ? wp.nx - 1.0001 : gx;
+  gy = gy < 0 ? 0 : gy > wp.ny - 1.0001 ? wp.ny - 1.0001 : gy;
+  const i = gx | 0, j = gy | 0, fx = gx - i, fy = gy - j;
+  const a = j * wp.nx + i, c = a + wp.nx;
+  const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+  _wd[0] = wp.dx[a] * w00 + wp.dx[a + 1] * w10 + wp.dx[c] * w01 + wp.dx[c + 1] * w11;
+  _wd[1] = wp.dy[a] * w00 + wp.dy[a + 1] * w10 + wp.dy[c] * w01 + wp.dy[c + 1] * w11;
+}
+
+// Điểm (x, y) của ảnh màu (toạ độ liên tục, mép điểm ảnh) tương ứng điểm nào của ảnh đen trắng gốc.
+function mapToBw(rect, x, y) {
+  if (rect.warp) { warpAt(rect.warp, x, y); x += _wd[0]; y += _wd[1]; }
+  return [(x - rect.ox) * (rect.wB / rect.rw), (y - rect.oy) * (rect.hB / rect.rh)];
+}
+
+// Chuẩn bị nguồn để lấy mẫu ở mật độ f mẫu / điểm ảnh màu: nếu ảnh đen trắng mịn hơn thì lọc theo diện tích trước (không răng cưa).
+function prepSource(grayB, wB, hB, rect, f) {
+  const kx = wB / rect.rw, ky = hB / rect.rh;
+  const rx = kx / f > 1.02 ? kx / f : 1, ry = ky / f > 1.02 ? ky / f : 1;
+  let a = grayB, sw = wB, sh = hB, pfx = 1, pfy = 1;
+  if (rx > 1 || ry > 1) {
+    const dw = Math.max(1, Math.round(wB / rx)), dh = Math.max(1, Math.round(hB / ry));
+    a = resizeArea(grayB, wB, hB, dw, dh); pfx = wB / dw; pfy = hB / dh; sw = dw; sh = dh;
+  }
+  return { a, sw, sh, pfx, pfy, kx, ky, wB, hB };
+}
+
+// Vẽ ảnh đen trắng (xám) vào hệ toạ độ ảnh màu; ngoài vùng phủ = 255.
+// opt.f: tỉ lệ ra so với ảnh màu (mặc định 1), opt.float: trả Float32Array.
+function renderAligned(grayB, wB, hB, rect, W, H, opt) {
+  opt = opt || {};
+  const f = opt.f || 1;
+  const Wo = Math.max(1, Math.round(W * f)), Ho = Math.max(1, Math.round(H * f));
+  const fx = Wo / W, fy = Ho / H;
+  const out = opt.float ? new Float32Array(Wo * Ho).fill(255) : new Uint8Array(Wo * Ho).fill(255);
+  const sp = prepSource(grayB, wB, hB, rect, Math.min(fx, fy));
+  const wp = rect.warp, kx = sp.kx, ky = sp.ky;
+  for (let y = 0; y < Ho; y++) {
+    const cy0 = (y + 0.5) / fy, o = y * Wo;
+    for (let x = 0; x < Wo; x++) {
+      let cx = (x + 0.5) / fx, cy = cy0;
+      if (wp) { warpAt(wp, cx, cy); cx += _wd[0]; cy += _wd[1]; }
+      const bx = (cx - rect.ox) * kx, by = (cy - rect.oy) * ky;
+      if (bx < 0 || by < 0 || bx >= wB || by >= hB) continue;
+      const v = cubicAt(sp.a, sp.sw, sp.sh, bx / sp.pfx - 0.5, by / sp.pfy - 0.5);
+      out[o + x] = opt.float ? v : (v < 0 ? 0 : v > 255 ? 255 : (v + 0.5) | 0);
+    }
+  }
+  return out;
+}
+
+/* ------------------------------------------- căn cục bộ: bù xoay và méo nhẹ của ảnh quét */
+function padMap(a, w, h, M) {
+  const pw = w + 2 * M, ph = h + 2 * M, out = new Float32Array(pw * ph);
+  for (let y = 0; y < h; y++) out.set(a.subarray(y * w, y * w + w), (y + M) * pw + M);
+  return { a: out, w: pw, h: ph };
+}
+function halveMap(P) {
+  const nw = P.w >> 1, nh = P.h >> 1, o = new Float32Array(nw * nh), a = P.a, w = P.w;
+  for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) { const i = 2 * y * w + 2 * x; o[y * nw + x] = (a[i] + a[i + 1] + a[i + w] + a[i + w + 1]) * 0.25; }
+  return { a: o, w: nw, h: nh };
+}
+// Tương quan chuẩn hoá giữa cửa sổ của Fc (tâm cx,cy) và cửa sổ của Fb dời (dx,dy).
+function nccWin(Fc, Fb, w, cx, cy, hw, dx, dy, st) {
+  let n = 0, sC = 0, sB = 0, sCC = 0, sBB = 0, sCB = 0;
+  const y1 = cy + hw, x0 = cx - hw, x1 = cx + hw;
+  for (let y = cy - hw; y < y1; y += st) {
+    const rc = y * w, rb = (y + dy) * w + dx;
+    for (let x = x0; x < x1; x += st) {
+      const c = Fc[rc + x], b = Fb[rb + x];
+      n++; sC += c; sB += b; sCC += c * c; sBB += b * b; sCB += c * b;
+    }
+  }
+  const vc = sCC - (sC * sC) / n, vb = sBB - (sB * sB) / n;
+  if (vc < 1e-6 || vb < 1e-6) return -1;
+  return (sCB - (sC * sB) / n) / Math.sqrt(vc * vb);
+}
+function nccFull(A, B, w, h) {
+  let n = 0, sA = 0, sB = 0, sAA = 0, sBB = 0, sAB = 0;
+  for (let y = 2; y < h - 2; y++) for (let x = 2; x < w - 2; x++) {
+    const i = y * w + x, a = A[i], b = B[i];
+    n++; sA += a; sB += b; sAA += a * a; sBB += b * b; sAB += a * b;
+  }
+  const va = sAA - (sA * sA) / n, vb = sBB - (sB * sB) / n;
+  if (va <= 1e-6 || vb <= 1e-6) return -1;
+  return (sAB - (sA * sB) / n) / Math.sqrt(va * vb);
+}
+// Tìm độ dời của một cửa sổ, từ thô đến tinh qua kim tự tháp. R = {c: tầng thô nhất, m: tầng giữa, f: tầng 0}.
+function matchPoint(PC, PB, cx0, cy0, hw0, M0, R) {
+  const L = PC.length;
+  let sx = 0, sy = 0, amb = 1;
+  for (let l = L - 1; l >= 0; l--) {
+    const s = 1 << l, w = PC[l].w;
+    const cx = (cx0 + M0) / s, cy = (cy0 + M0) / s, hw = hw0 / s;
+    const Rl = l === L - 1 ? R.c : l === 0 ? R.f : R.m;
+    const st = l === 0 ? 2 : 1;
+    const Fc = PC[l].a, Fb = PB[l].a;
+    const side = 2 * Rl + 1;
+    const surf = l === L - 1 ? new Float32Array(side * side) : null;
+    let bi = 0, bj = 0, bs = -2;
+    for (let j = -Rl; j <= Rl; j++) {
+      for (let i = -Rl; i <= Rl; i++) {
+        const n = nccWin(Fc, Fb, w, cx, cy, hw, sx + i, sy + j, st);
+        if (surf) surf[(j + Rl) * side + i + Rl] = n;
+        if (n > bs) { bs = n; bi = i; bj = j; }
+      }
+    }
+    if (surf) {
+      let b2 = -2;
+      for (let j = -Rl; j <= Rl; j++) for (let i = -Rl; i <= Rl; i++) {
+        if (Math.max(Math.abs(i - bi), Math.abs(j - bj)) >= 2) { const v = surf[(j + Rl) * side + i + Rl]; if (v > b2) b2 = v; }
+      }
+      amb = bs > 0.05 ? Math.max(0, b2) / bs : 1;
+    }
+    sx += bi; sy += bj;
+    if (l > 0) { sx *= 2; sy *= 2; }
+  }
+  const Fc = PC[0].a, Fb = PB[0].a, w = PC[0].w, cx = cx0 + M0, cy = cy0 + M0;
+  const e = [];
+  for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) e.push(nccWin(Fc, Fb, w, cx, cy, hw0, sx + i, sy + j, 1));
+  const c0 = e[4], dxx = e[3] - 2 * c0 + e[5], dyy = e[1] - 2 * c0 + e[7];
+  let fx = 0, fy = 0;
+  if (dxx < -1e-6) fx = clamp((0.5 * (e[3] - e[5])) / dxx, -0.5, 0.5);
+  if (dyy < -1e-6) fy = clamp((0.5 * (e[1] - e[7])) / dyy, -0.5, 0.5);
+  return { dx: sx + fx, dy: sy + fy, ncc: c0, amb };
+}
+
+function solve3(m, b) {
+  const [a, bb, c, d, e, f, g, h, i] = m;
+  const det = a * (e * i - f * h) - bb * (d * i - f * g) + c * (d * h - e * g);
+  if (Math.abs(det) < 1e-9) return null;
+  const x = (b[0] * (e * i - f * h) - bb * (b[1] * i - f * b[2]) + c * (b[1] * h - e * b[2])) / det;
+  const y = (a * (b[1] * i - f * b[2]) - b[0] * (d * i - f * g) + c * (d * b[2] - b[1] * g)) / det;
+  const z = (a * (e * b[2] - b[1] * h) - bb * (d * b[2] - b[1] * g) + b[0] * (d * h - e * g)) / det;
+  return [x, y, z];
+}
+// Khớp affine bền (IRLS, Tukey) cho độ dời (dx, dy) = A·(x - cx, y - cy, 1)
+function fitAffine(pts, cx, cy) {
+  let wts = pts.map((p) => p.w), model = null;
+  for (let it = 0; it < 8; it++) {
+    let s11 = 0, s12 = 0, s13 = 0, s22 = 0, s23 = 0, s33 = 0, bx1 = 0, bx2 = 0, bx3 = 0, by1 = 0, by2 = 0, by3 = 0, sw = 0;
+    for (let k = 0; k < pts.length; k++) {
+      const w = wts[k]; if (w <= 0) continue;
+      const x = pts[k].x - cx, y = pts[k].y - cy, dx = pts[k].dx, dy = pts[k].dy;
+      s11 += w * x * x; s12 += w * x * y; s13 += w * x; s22 += w * y * y; s23 += w * y; s33 += w; sw++;
+      bx1 += w * x * dx; bx2 += w * y * dx; bx3 += w * dx; by1 += w * x * dy; by2 += w * y * dy; by3 += w * dy;
+    }
+    if (sw < 6) return model;
+    const M = [s11, s12, s13, s12, s22, s23, s13, s23, s33];
+    const px = solve3(M, [bx1, bx2, bx3]), py = solve3(M, [by1, by2, by3]);
+    if (!px || !py) return model;
+    model = { px, py, cx, cy };
+    const res = pts.map((p) => { const x = p.x - cx, y = p.y - cy; return Math.hypot(p.dx - (px[0] * x + px[1] * y + px[2]), p.dy - (py[0] * x + py[1] * y + py[2])); });
+    const sorted = res.filter((_, k) => wts[k] > 0).sort((a, b) => a - b);
+    const med = sorted[sorted.length >> 1] || 0;
+    const sc = Math.max(0.35, 1.4826 * med), cc = 4.685 * sc;
+    wts = pts.map((p, k) => { const r = res[k]; return r < cc ? p.w * (1 - (r / cc) * (r / cc)) ** 2 : 0; });
+  }
+  model.wts = wts;
+  return model;
+}
+const affAt = (m, x, y) => [m.px[0] * (x - m.cx) + m.px[1] * (y - m.cy) + m.px[2], m.py[0] * (x - m.cx) + m.py[1] * (y - m.cy) + m.py[2]];
+
+// Ghép độ dời đo trên nền warp cũ: D(p) = Δ(p) + cũ(p + Δ(p))
+function composeWarp(old, nw) {
+  if (!old) return nw;
+  const dx = new Float32Array(nw.dx.length), dy = new Float32Array(nw.dy.length);
+  for (let j = 0; j < nw.ny; j++) for (let i = 0; i < nw.nx; i++) {
+    const k = j * nw.nx + i, ex = nw.dx[k], ey = nw.dy[k];
+    warpAt(old, nw.x0 + i * nw.step + ex, nw.y0 + j * nw.step + ey);
+    dx[k] = ex + _wd[0]; dy[k] = ey + _wd[1];
+  }
+  return { x0: nw.x0, y0: nw.y0, step: nw.step, nx: nw.nx, ny: nw.ny, dx, dy };
+}
+
+async function registerPass(FC, FB, w, h, P, sdC) {
+  const L = P.levels;
+  let maxShift = 0;
+  for (let l = 0; l < L; l++) maxShift += (l === L - 1 ? P.R.c : l === 0 ? P.R.f : P.R.m) * (1 << l);
+  const M0 = Math.ceil((P.hw + maxShift + 8) / 4) * 4;
+  const PC = [padMap(FC, w, h, M0)], PB = [padMap(FB, w, h, M0)];
+  for (let l = 1; l < L; l++) { PC.push(halveMap(PC[l - 1])); PB.push(halveMap(PB[l - 1])); }
+  const pts = [];
+  const g = P.g, hw = P.hw;
+  const varMin = (0.28 * sdC) * (0.28 * sdC);
+  for (let cy = Math.ceil(g / 2 / 4) * 4; cy < h - 4; cy += g) {
+    for (let cx = Math.ceil(g / 2 / 4) * 4; cx < w - 4; cx += g) {
+      // cửa sổ phải có đủ nét vẽ ở ảnh màu
+      let n = 0, s = 0, ss = 0;
+      const wc = PC[0].w, A = PC[0].a;
+      for (let y = cy - hw + M0; y < cy + hw + M0; y += 4) for (let x = cx - hw + M0; x < cx + hw + M0; x += 4) { const v = A[y * wc + x]; n++; s += v; ss += v * v; }
+      if (ss / n - (s / n) * (s / n) < varMin) continue;
+      const m = matchPoint(PC, PB, cx, cy, hw, M0, P.R);
+      const okAmb = m.amb <= 0.96 || m.ncc >= 0.7;
+      if (m.ncc >= P.minNcc && okAmb) pts.push({ x: cx, y: cy, dx: m.dx, dy: m.dy, ncc: m.ncc, w: Math.max(0.02, m.ncc - 0.2) ** 2 });
+    }
+    await yieldUI();
+  }
+  return pts;
+}
+
+// Dựng lưới độ dời (điểm ảnh màu) từ mô hình affine + phần dư làm trơn
+function buildWarp(pts, model, wk, hk, f, wC, hC, sigma, lam) {
+  const step = Math.max(8, Math.round(sigma / 1.2 / f));
+  const nx = Math.ceil(wC / step) + 2, ny = Math.ceil(hC / step) + 2;
+  const dx = new Float32Array(nx * ny), dy = new Float32Array(nx * ny);
+  const inl = pts.map((p, k) => ({ p, w: model.wts[k] })).filter((o) => o.w > 0);
+  let wm = 0; for (const o of inl) wm += o.w; wm = inl.length ? wm / inl.length : 1;
+  const res = inl.map((o) => { const a = affAt(model, o.p.x, o.p.y); return { x: o.p.x, y: o.p.y, rx: o.p.dx - a[0], ry: o.p.dy - a[1], w: o.w }; });
+  const inv2 = 1 / (2 * sigma * sigma), cut = (3 * sigma) * (3 * sigma);
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const X = i * step * f, Y = j * step * f;   // toạ độ làm việc
+      let sw = 0, sx = 0, sy = 0;
+      for (const r of res) {
+        const d2 = (r.x - X) * (r.x - X) + (r.y - Y) * (r.y - Y);
+        if (d2 > cut) continue;
+        const k = r.w * Math.exp(-d2 * inv2);
+        sw += k; sx += k * r.rx; sy += k * r.ry;
+      }
+      const den = sw + lam * wm;
+      const a = affAt(model, X, Y);
+      const o = j * nx + i;
+      dx[o] = (a[0] + sx / den) / f; dy[o] = (a[1] + sy / den) / f;
+    }
+  }
+  return { x0: 0, y0: 0, step, nx, ny, dx, dy };
+}
+
+// Giải hệ dày A·X = B (n×n, k vế phải) bằng khử Gauss có chọn trụ; ghi đè A, B (nghiệm ở B)
+function luSolveMulti(A, n, B, k) {
+  for (let c = 0; c < n; c++) {
+    let p = c, mv = Math.abs(A[c * n + c]);
+    for (let r = c + 1; r < n; r++) { const v = Math.abs(A[r * n + c]); if (v > mv) { mv = v; p = r; } }
+    if (mv < 1e-13) return false;
+    if (p !== c) {
+      for (let t = 0; t < n; t++) { const x = A[c * n + t]; A[c * n + t] = A[p * n + t]; A[p * n + t] = x; }
+      for (let t = 0; t < k; t++) { const x = B[c * k + t]; B[c * k + t] = B[p * k + t]; B[p * k + t] = x; }
+    }
+    const piv = A[c * n + c], cc = c * n;
+    for (let r = c + 1; r < n; r++) {
+      const rc = r * n, f = A[rc + c] / piv;
+      if (!f) continue;
+      for (let t = c + 1; t < n; t++) A[rc + t] -= f * A[cc + t];
+      for (let t = 0; t < k; t++) B[r * k + t] -= f * B[c * k + t];
+    }
+  }
+  for (let t = 0; t < k; t++) {
+    for (let r = n - 1; r >= 0; r--) {
+      let sm = B[r * k + t];
+      for (let q = r + 1; q < n; q++) sm -= A[r * n + q] * B[q * k + t];
+      B[r * k + t] = sm / A[r * n + r];
+    }
+  }
+  return true;
+}
+const tpsPhi = (r2) => (r2 > 1e-12 ? 0.5 * r2 * Math.log(r2) : 0);
+
+// Dựng lưới độ dời bằng thin-plate spline làm trơn cho phần dư sau mô hình affine (nội suy trơn qua vùng ít nét, không bị kéo về affine)
+function buildWarpTPS(pts, model, wk, hk, f, wC, hC, g, smooth, sigma, lam) {
+  const S = Math.max(wk, hk);
+  const inl = [];
+  for (let k = 0; k < pts.length; k++) {
+    if (!(model.wts[k] > 0)) continue;
+    const a = affAt(model, pts[k].x, pts[k].y);
+    inl.push({ u: pts[k].x / S, v: pts[k].y / S, rx: pts[k].dx - a[0], ry: pts[k].dy - a[1], w0: model.wts[k] });
+  }
+  if (inl.length < 14) return null;
+  let m = inl.length;
+  if (m > 760) { inl.sort((a, b) => b.w0 - a.w0); inl.length = 760; m = 760; }
+  let wm = 0; for (const o of inl) wm += o.w0; wm /= m;
+  const base = inl.map((o) => o.w0 / wm);
+  const N = m + 3;
+  const phi = new Float64Array(m * m);
+  for (let i = 0; i < m; i++) for (let j = 0; j < i; j++) { const du = inl[i].u - inl[j].u, dv = inl[i].v - inl[j].v, v = tpsPhi(du * du + dv * dv); phi[i * m + j] = v; phi[j * m + i] = v; }
+  let wts = base.slice(), sol = null;
+  for (let round = 0; round < 3; round++) {
+    const A = new Float64Array(N * N), B = new Float64Array(N * 2);
+    for (let i = 0; i < m; i++) {
+      for (let j = 0; j < m; j++) A[i * N + j] = phi[i * m + j];
+      A[i * N + i] += smooth / Math.max(1e-3, wts[i]);
+      A[i * N + m] = 1; A[i * N + m + 1] = inl[i].u; A[i * N + m + 2] = inl[i].v;
+      A[m * N + i] = 1; A[(m + 1) * N + i] = inl[i].u; A[(m + 2) * N + i] = inl[i].v;
+      B[i * 2] = inl[i].rx; B[i * 2 + 1] = inl[i].ry;
+    }
+    if (!luSolveMulti(A, N, B, 2)) return null;
+    sol = B;
+    if (round === 2) break;
+    // trọng số bền theo phần dư tại các điểm
+    const e = new Float64Array(m);
+    for (let i = 0; i < m; i++) {
+      let fx = sol[m * 2] + sol[(m + 1) * 2] * inl[i].u + sol[(m + 2) * 2] * inl[i].v;
+      let fy = sol[m * 2 + 1] + sol[(m + 1) * 2 + 1] * inl[i].u + sol[(m + 2) * 2 + 1] * inl[i].v;
+      for (let j = 0; j < m; j++) { const c = phi[i * m + j]; fx += sol[j * 2] * c; fy += sol[j * 2 + 1] * c; }
+      e[i] = Math.hypot(inl[i].rx - fx, inl[i].ry - fy);
+    }
+    const srt = Array.from(e).sort((a, b) => a - b), med = srt[srt.length >> 1] || 0;
+    const sc = Math.max(0.4, 1.4826 * med), cc = 4.685 * sc;
+    for (let i = 0; i < m; i++) wts[i] = base[i] * (e[i] < cc ? (1 - (e[i] / cc) * (e[i] / cc)) ** 2 : 0) + 1e-4;
+  }
+  let rmax = 0;
+  for (const o of inl) rmax = Math.max(rmax, Math.hypot(o.rx, o.ry));
+  const lim = 1.5 * rmax + 2;
+  const step = Math.max(8, Math.round(g / (2 * f)));
+  const nx = Math.ceil(wC / step) + 2, ny = Math.ceil(hC / step) + 2;
+  const dx = new Float32Array(nx * ny), dy = new Float32Array(nx * ny);
+  const U = new Float64Array(m), V = new Float64Array(m);
+  for (let i = 0; i < m; i++) { U[i] = inl[i].u; V[i] = inl[i].v; }
+  // Ngoài vùng có điểm bám (lề trang) spline dễ vọt: ở đó pha dần sang hồi quy hạt nhân kéo về affine
+  const sg = sigma || 90, lm = lam == null ? 0.5 : lam, inv2 = 1 / (2 * sg * sg), cut = 9 * sg * sg, S2 = S * S;
+  const R1 = 3 * g, R2 = 6 * g;
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const X = i * step * f, Y = j * step * f, u = X / S, v = Y / S;
+      let fx = sol[m * 2] + sol[(m + 1) * 2] * u + sol[(m + 2) * 2] * v;
+      let fy = sol[m * 2 + 1] + sol[(m + 1) * 2 + 1] * u + sol[(m + 2) * 2 + 1] * v;
+      let kw = 0, kx = 0, ky = 0;
+      const dq = [1e18, 1e18, 1e18, 1e18];
+      for (let q = 0; q < m; q++) {
+        const du = u - U[q], dv = v - V[q], r2 = du * du + dv * dv, c = tpsPhi(r2);
+        fx += sol[q * 2] * c; fy += sol[q * 2 + 1] * c;
+        const d2 = r2 * S2, qi = (du >= 0 ? 0 : 1) + (dv >= 0 ? 0 : 2);
+        if (d2 < dq[qi]) dq[qi] = d2;
+        if (d2 < cut) { const kk = wts[q] * Math.exp(-d2 * inv2); kw += kk; kx += kk * inl[q].rx; ky += kk * inl[q].ry; }
+      }
+      const mag = Math.hypot(fx, fy);
+      if (mag > lim) { fx *= lim / mag; fy *= lim / mag; }
+      const dmax = Math.sqrt(Math.max(dq[0], dq[1], dq[2], dq[3]));
+      const e = dmax <= R1 ? 1 : dmax >= R2 ? 0 : (R2 - dmax) / (R2 - R1);
+      if (e < 1) { const den = kw + lm; fx = e * fx + (1 - e) * (kx / den); fy = e * fy + (1 - e) * (ky / den); }
+      const a = affAt(model, X, Y), o = j * nx + i;
+      dx[o] = (a[0] + fx) / f; dy[o] = (a[1] + fy) / f;
+    }
+  }
+  for (let k = 0; k < dx.length; k++) if (!Number.isFinite(dx[k]) || !Number.isFinite(dy[k])) return null;
+  return { x0: 0, y0: 0, step, nx, ny, dx, dy };
+}
+
+function warpStats(wp, W, H) {
+  let mx = 0, sum = 0, n = 0;
+  for (let j = 0; j < wp.ny; j++) for (let i = 0; i < wp.nx; i++) {
+    const x = i * wp.step, y = j * wp.step;
+    if (x > W || y > H) continue;
+    const k = j * wp.nx + i, m = Math.hypot(wp.dx[k], wp.dy[k]);
+    if (m > mx) mx = m; sum += m; n++;
+  }
+  return { max: mx, mean: n ? sum / n : 0 };
+}
+
+// Căn cục bộ: nhiều lượt đo độ dời theo ô, khớp affine bền (bù xoay, co giãn) + phần dư trơn (bù cong, méo)
+async function refineWarp(grayC, wC, hC, grayB, wB, hB, rect, onProgress, opts) {
+  opts = opts || {};
+  const prog = (p, m) => { if (onProgress) onProgress(p, m); };
+  const f = Math.min(1, 960 / wC);
+  const Wk = Math.max(64, Math.round(wC * f)), Hk = Math.max(64, Math.round(hC * f));
+  const FC = featureMap(resizeArea(grayC, wC, hC, Wk, Hk), Wk, Hk);
+  let sdC = 0;
+  { let s = 0, ss = 0; for (let i = 0; i < FC.length; i++) { s += FC[i]; ss += FC[i] * FC[i]; } const m = s / FC.length; sdC = Math.sqrt(Math.max(1e-9, ss / FC.length - m * m)); }
+  const base = Object.assign({}, rect); delete base.warp;
+  const feat = (wp) => featureMap(renderAligned(grayB, wB, hB, Object.assign({}, base, { warp: wp }), wC, hC, { f, float: true }), Wk, Hk);
+  let cur = null, FB = feat(null);
+  let score = nccFull(FC, FB, Wk, Hk);
+  const score0 = score;
+  const passes = opts.passes || [
+    { g: 64, hw: 64, levels: 3, R: { c: 10, m: 2, f: 2 }, sigma: 90, lam: 0.5, minNcc: 0.4, smooth: 0.03 },
+    { g: 64, hw: 64, levels: 3, R: { c: 3, m: 2, f: 2 }, sigma: 90, lam: 0.5, minNcc: 0.4, smooth: 0.03 },
+    { g: 48, hw: 48, levels: 2, R: { c: 3, m: 2, f: 2 }, sigma: 80, lam: 0.7, minNcc: 0.4, smooth: 0.03 },
+    { g: 40, hw: 40, levels: 2, R: { c: 2, m: 2, f: 2 }, sigma: 60, lam: 0.8, minNcc: 0.45, smooth: 0.03 },
+  ];
+  let done = 0, nPts = [];
+  for (let pi = 0; pi < passes.length; pi++) {
+    const P = passes[pi];
+    prog(pi / passes.length, 'Đang bù xoay và méo cục bộ…');
+    const pts = await registerPass(FC, FB, Wk, Hk, P, sdC);
+    nPts.push(pts.length);
+    if (pts.length < 8) break;
+    const model = fitAffine(pts, Wk / 2, Hk / 2);
+    if (!model) break;
+    const nw = (P.smooth != null ? buildWarpTPS(pts, model, Wk, Hk, f, wC, hC, P.g, P.smooth, P.sigma, P.lam) : null) || buildWarp(pts, model, Wk, Hk, f, wC, hC, P.sigma, P.lam);
+    const cand = composeWarp(cur, nw);
+    const FB2 = feat(cand);
+    const s2 = nccFull(FC, FB2, Wk, Hk);
+    if (!(s2 > score + 0.0004)) break;
+    cur = cand; FB = FB2; score = s2; done++;
+    await yieldUI();
+  }
+  const info = { score0, score, passes: done, points: nPts };
+  if (cur) Object.assign(info, warpStats(cur, wC, hC));
+  return { warp: cur, score, info };
+}
+
+/* ------------------------------------------------------- mặt nạ & vùng */
+// Khoảng cách chamfer tới điểm 0 gần nhất. borderIsZero: ngoài mảng tính là 0.
+function distToZero(a, w, h, borderIsZero) {
+  const INF = 1e9, S2 = Math.SQRT2;
+  const d = new Float32Array(w * h);
+  for (let i = 0; i < d.length; i++) d[i] = a[i] ? INF : 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      let v = d[i];
+      if (v === 0) continue;
+      if (x > 0) { const t = d[i - 1] + 1; if (t < v) v = t; } else if (borderIsZero && v > 1) v = 1;
+      if (y > 0) {
+        let t = d[i - w] + 1; if (t < v) v = t;
+        if (x > 0) { t = d[i - w - 1] + S2; if (t < v) v = t; }
+        if (x < w - 1) { t = d[i - w + 1] + S2; if (t < v) v = t; }
+      } else if (borderIsZero && v > 1) v = 1;
+      d[i] = v;
+    }
+  }
+  for (let y = h - 1; y >= 0; y--) {
+    for (let x = w - 1; x >= 0; x--) {
+      const i = y * w + x;
+      let v = d[i];
+      if (v === 0) continue;
+      if (x < w - 1) { const t = d[i + 1] + 1; if (t < v) v = t; } else if (borderIsZero && v > 1) v = 1;
+      if (y < h - 1) {
+        let t = d[i + w] + 1; if (t < v) v = t;
+        if (x < w - 1) { t = d[i + w + 1] + S2; if (t < v) v = t; }
+        if (x > 0) { t = d[i + w - 1] + S2; if (t < v) v = t; }
+      } else if (borderIsZero && v > 1) v = 1;
+      d[i] = v;
+    }
+  }
+  return d;
+}
+
+function fillHoles(mask, w, h) {
+  const reach = new Uint8Array(w * h);
+  const stack = [];
+  const push = (x, y) => {
+    const i = y * w + x;
+    if (!mask[i] && !reach[i]) { reach[i] = 1; stack.push(i); }
+  };
+  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+  while (stack.length) {
+    const i = stack.pop();
+    const x = i % w, y = (i - x) / w;
+    if (x > 0) push(x - 1, y);
+    if (x < w - 1) push(x + 1, y);
+    if (y > 0) push(x, y - 1);
+    if (y < h - 1) push(x, y + 1);
+  }
+  let filled = 0;
+  for (let i = 0; i < w * h; i++) if (!mask[i] && !reach[i]) { mask[i] = 1; filled++; }
+  return filled;
+}
+
+function floodScan(test, visited, W, H, sx, sy, recMax) {
+  const stack = [sx, sy];
+  let area = 0, minx = sx, maxx = sx, miny = sy, maxy = sy, contact = 0;
+  let spans = recMax > 0 ? [] : null;
+  while (stack.length) {
+    const y = stack.pop(), x = stack.pop();
+    const row = y * W;
+    if (visited[row + x] || !test(row + x)) continue;
+    let xl = x, xr = x;
+    while (xl > 0 && !visited[row + xl - 1] && test(row + xl - 1)) xl--;
+    while (xr < W - 1 && !visited[row + xr + 1] && test(row + xr + 1)) xr++;
+    visited.fill(1, row + xl, row + xr + 1);
+    area += xr - xl + 1;
+    if (xl < minx) minx = xl;
+    if (xr > maxx) maxx = xr;
+    if (y < miny) miny = y;
+    if (y > maxy) maxy = y;
+    if (y === 0 || y === H - 1) contact += xr - xl + 1;
+    else { if (xl === 0) contact++; if (xr === W - 1) contact++; }
+    if (spans) { if (area <= recMax) spans.push(y, xl, xr); else spans = null; }
+    for (let dy = -1; dy <= 1; dy += 2) {
+      const ny = y + dy;
+      if (ny < 0 || ny >= H) continue;
+      const nrow = ny * W;
+      let inRun = false;
+      for (let i = xl; i <= xr; i++) {
+        const ok = !visited[nrow + i] && test(nrow + i);
+        if (ok && !inRun) { stack.push(i, ny); inRun = true; } else if (!ok) inRun = false;
+      }
+    }
+  }
+  return { area, minx, maxx, miny, maxy, contact, spans: spans ? Int32Array.from(spans) : null };
+}
+
+function regionFromSpans(st) {
+  const { minx, maxx, miny, maxy, spans } = st;
+  const w = maxx - minx + 1, h = maxy - miny + 1;
+  const mask = new Uint8Array(w * h);
+  for (let k = 0; k < spans.length; k += 3) {
+    const y = spans[k] - miny, x0 = spans[k + 1] - minx, x1 = spans[k + 2] - minx;
+    mask.fill(1, y * w + x0, y * w + x1 + 1);
+  }
+  fillHoles(mask, w, h);
+  let area = 0;
+  for (let i = 0; i < mask.length; i++) area += mask[i];
+  return { x: minx, y: miny, w, h, mask, area, whiteArea: st.area, opt: {} };
+}
+
+function regionFromRect(x0, y0, x1, y1, W, H) {
+  const ax = clamp(Math.round(Math.min(x0, x1)), 0, W - 1), bx = clamp(Math.round(Math.max(x0, x1)), 0, W);
+  const ay = clamp(Math.round(Math.min(y0, y1)), 0, H - 1), by = clamp(Math.round(Math.max(y0, y1)), 0, H);
+  const w = bx - ax, h = by - ay;
+  if (w < 4 || h < 4) return null;
+  return { x: ax, y: ay, w, h, mask: new Uint8Array(w * h).fill(1), area: w * h, opt: {} };
+}
+
+function regionFromPolygon(pts, W, H) {
+  if (pts.length < 3) return null;
+  let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+  for (const p of pts) {
+    if (p[0] < minx) minx = p[0];
+    if (p[0] > maxx) maxx = p[0];
+    if (p[1] < miny) miny = p[1];
+    if (p[1] > maxy) maxy = p[1];
+  }
+  minx = clamp(Math.floor(minx), 0, W - 1); miny = clamp(Math.floor(miny), 0, H - 1);
+  maxx = clamp(Math.ceil(maxx), 0, W - 1); maxy = clamp(Math.ceil(maxy), 0, H - 1);
+  const w = maxx - minx + 1, h = maxy - miny + 1;
+  if (w < 4 || h < 4) return null;
+  const mask = new Uint8Array(w * h);
+  const n = pts.length;
+  for (let y = 0; y < h; y++) {
+    const yc = miny + y + 0.5;
+    const xs = [];
+    for (let k = 0; k < n; k++) {
+      const a = pts[k], b = pts[(k + 1) % n];
+      if ((a[1] <= yc && b[1] > yc) || (b[1] <= yc && a[1] > yc)) xs.push(a[0] + ((yc - a[1]) * (b[0] - a[0])) / (b[1] - a[1]));
+    }
+    xs.sort((p, q) => p - q);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const a = clamp(Math.round(xs[k]) - minx, 0, w), b = clamp(Math.round(xs[k + 1]) - minx, 0, w);
+      if (b > a) mask.fill(1, y * w + a, y * w + b);
+    }
+  }
+  let area = 0;
+  for (let i = 0; i < mask.length; i++) area += mask[i];
+  if (area < 16) return null;
+  return { x: minx, y: miny, w, h, mask, area, opt: {} };
+}
+
+/* ------------------------------------------------- bấm vào khung thoại */
+function pickSeeds(ctx, px, py) {
+  const { W, H, gray } = ctx;
+  px = clamp(px | 0, 0, W - 1); py = clamp(py | 0, 0, H - 1);
+  const R = Math.max(8, Math.round(Math.max(W, H) / 130));
+  const x0 = Math.max(0, px - R), x1 = Math.min(W - 1, px + R), y0 = Math.max(0, py - R), y1 = Math.min(H - 1, py + R);
+  let dark = 0, tot = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { tot++; if (gray[y * W + x] < 90) dark++; }
+  const g0 = gray[py * W + px];
+  if (g0 >= 90 || dark / tot > 0.7) return [[px, py]];
+  const cand = [];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (gray[y * W + x] >= 90) cand.push([x, y, (x - px) * (x - px) + (y - py) * (y - py)]);
+    }
+  }
+  cand.sort((a, b) => a[2] - b[2]);
+  const picks = [];
+  for (const c of cand) {
+    if (picks.every((p) => Math.abs(p[0] - c[0]) + Math.abs(p[1] - c[1]) > 5)) picks.push([c[0], c[1]]);
+    if (picks.length >= 6) break;
+  }
+  return picks;
+}
+
+function floodRegionAt(ctx, px, py, tol) {
+  const { W, H, rgba } = ctx;
+  const N = W * H;
+  const visited = new Uint8Array(N);
+  const minArea = Math.max(120, Math.round(N * 0.00008));
+  const maxArea = Math.round(N * 0.3);
+  let tooBig = false;
+  for (const [sx, sy] of pickSeeds(ctx, px, py)) {
+    if (visited[sy * W + sx]) continue;
+    let sr = 0, sg = 0, sb = 0, c = 0;
+    for (let y = Math.max(0, sy - 1); y <= Math.min(H - 1, sy + 1); y++) {
+      for (let x = Math.max(0, sx - 1); x <= Math.min(W - 1, sx + 1); x++) {
+        const j = (y * W + x) << 2; sr += rgba[j]; sg += rgba[j + 1]; sb += rgba[j + 2]; c++;
+      }
+    }
+    sr = sr / c; sg = sg / c; sb = sb / c;
+    const test = (i) => {
+      const j = i << 2;
+      return Math.abs(rgba[j] - sr) <= tol && Math.abs(rgba[j + 1] - sg) <= tol && Math.abs(rgba[j + 2] - sb) <= tol;
+    };
+    const st = floodScan(test, visited, W, H, sx, sy, maxArea);
+    if (!st.spans) { tooBig = true; continue; }
+    if (st.area < minArea) continue;
+    const region = regionFromSpans(st);
+    region.seed = [sx, sy];
+    return { region };
+  }
+  return { region: null, reason: tooBig ? 'big' : 'small' };
+}
+
+/* ----------------------------------------------------- tự tìm khung thoại */
+function analyzeRegion(ctx, reg) {
+  const { W, gray, bw } = ctx;
+  const { x: bx, y: by, w, h, mask } = reg;
+  const dC = new Uint8Array(w * h), dB = new Uint8Array(w * h);
+  let inkC = 0, darkB = 0, midB = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!mask[i]) continue;
+      const k = (by + y) * W + bx + x;
+      const g = gray[k], b = bw[k];
+      if (g < 140) { dC[i] = 1; inkC++; }
+      if (b < 140) { dB[i] = 1; darkB++; }
+      if (b >= 40 && b <= 215) midB++;
+    }
+  }
+  const n = reg.area;
+  let same = 0;
+  if (darkB > 20 && inkC > 20) {
+    const nd = new Uint8Array(w * h);
+    for (let i = 0; i < nd.length; i++) nd[i] = dC[i] ? 0 : 1;
+    const dist = distToZero(nd, w, h, false);
+    let hit = 0;
+    for (let i = 0; i < nd.length; i++) if (dB[i] && dist[i] <= 2.3) hit++;
+    same = hit / darkB;
+  }
+  const midC = Math.max(0, n - reg.whiteArea - inkC);
+  return { inkC: inkC / n, midC: midC / n, darkB: darkB / n, midB: midB / n, same, n };
+}
+
+/* ------------------------------------ ô chữ nền màu: tìm theo ảnh đen trắng */
+// Số điểm ảnh chung của hai vùng (mỗi vùng có hộp x,y,w,h và mặt nạ).
+function overlapCount(a, b) {
+  const x0 = Math.max(a.x, b.x), y0 = Math.max(a.y, b.y), x1 = Math.min(a.x + a.w, b.x + b.w), y1 = Math.min(a.y + a.h, b.y + b.h);
+  if (x1 <= x0 || y1 <= y0) return 0;
+  let c = 0;
+  for (let y = y0; y < y1; y++) {
+    let ia = (y - a.y) * a.w + (x0 - a.x), ib = (y - b.y) * b.w + (x0 - b.x);
+    for (let x = x0; x < x1; x++, ia++, ib++) if (a.mask[ia] && b.mask[ib]) c++;
+  }
+  return c;
+}
+
+// Đếm các mảng đen cỡ nét chữ trong ảnh nhị phân: chữ gồm nhiều mảng to, còn tông chấm hoặc nét vẽ rời rạc thì ít mảng to / toàn mảng nhỏ.
+function inkBlobs(bin, w, h, minExt) {
+  const vis = new Uint8Array(w * h), test = (i) => bin[i] === 1;
+  let big = 0, bigPx = 0, total = 0, maxBlob = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (vis[i] || !bin[i]) continue;
+      const st = floodScan(test, vis, w, h, x, y, 0);
+      total += st.area;
+      if (st.area > maxBlob) maxBlob = st.area;
+      if (Math.max(st.maxx - st.minx, st.maxy - st.miny) + 1 >= minExt) { big++; bigPx += st.area; }
+    }
+  }
+  return { big, bigPx, total, maxBlob };
+}
+
+// Ô trắng có chữ ở ảnh đen trắng đã căn, mà ở ảnh màu là nền màu phẳng (vàng, xanh…) có chữ Nhật.
+// Vùng cuối cùng lấy từ ảnh màu (loang theo màu), chỉ nhận khi trùng với ô trắng ở ảnh đen trắng.
+async function detectTinted(ctx, opt, existing, onProgress) {
+  const { W, H, rgba, gray, bw } = ctx;
+  const N = W * H, tol = opt.tol, minArea = opt.minArea, thrW = 255 - tol;
+  const maxArea = Math.min(opt.maxArea, Math.round(N * 0.08));   // ô dẫn truyện / khung màu thường nhỏ hơn khung thoại trắng
+  // mức trắng của giấy ở ảnh đen trắng: bách phân vị 97 của cả trang
+  const hist = new Uint32Array(256);
+  let tot = 0;
+  for (let i = 0; i < N; i += 5) { hist[bw[i]]++; tot++; }
+  let acc = 0, pw = 255;
+  for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc >= tot * 0.03) { pw = v; break; } }
+  if (pw < 170) return [];
+  const thr = clamp(pw - 28, 150, 232);
+  const visited = new Uint8Array(N);
+  const test = (i) => bw[i] >= thr;
+  const cand = [];
+  for (let y = 0; y < H; y++) {
+    if ((y & 63) === 0) { if (onProgress) onProgress(0.5 * y / H); await yieldUI(); }
+    const row = y * W;
+    for (let x = 0; x < W; x++) {
+      const i = row + x;
+      if (visited[i] || !test(i)) continue;
+      const st = floodScan(test, visited, W, H, x, y, maxArea);
+      if (!st.spans || st.area < minArea) continue;
+      const bwid = st.maxx - st.minx + 1, bh = st.maxy - st.miny + 1;
+      if (bwid < 24 || bh < 24 || bwid / bh > 14 || bh / bwid > 14) continue;
+      if (st.contact > 0.5 * Math.sqrt(st.area)) continue;
+      cand.push(st);
+    }
+  }
+  const out = [], vis2 = new Uint8Array(N);
+  for (let ci = 0; ci < cand.length; ci++) {
+    if (onProgress) onProgress(0.5 + 0.5 * ci / cand.length);
+    if ((ci & 15) === 15) await yieldUI();
+    const rb = regionFromSpans(cand[ci]);          // ô trắng ở ảnh đen trắng (đã lấp lỗ chữ)
+    const { x: bx, y: by, w, h, mask } = rb;
+    let shared = 0;
+    for (const e of existing) shared += overlapCount(rb, e);
+    if (shared >= 0.3 * rb.area) continue;         // đã được tìm ở bước khung trắng
+    const n = w * h;
+    const dark = new Uint8Array(n);
+    let darkN = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (mask[i] && bw[(by + y) * W + bx + x] < 140) { dark[i] = 1; darkN++; } }
+    const dr = darkN / rb.area;
+    if (dr < 0.008 || dr > 0.45) continue;         // không có chữ, hoặc quá đặc (tranh)
+    const nd = new Uint8Array(n);
+    for (let i = 0; i < n; i++) nd[i] = dark[i] ? 0 : 1;
+    const dd = distToZero(nd, w, h, false), inside = distToZero(mask, w, h, true);
+    // màu nền: màu nhiều nhất ở chỗ không có chữ (cả hai ảnh)
+    const bins = new Uint32Array(32768);
+    let cnt = 0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!mask[i] || inside[i] < 2 || dd[i] <= 2.3) continue;
+        const k = (by + y) * W + bx + x;
+        if (gray[k] < 140) continue;
+        const j = k << 2;
+        bins[((rgba[j] >> 3) << 10) | ((rgba[j + 1] >> 3) << 5) | (rgba[j + 2] >> 3)]++; cnt++;
+      }
+    }
+    if (cnt < 80) continue;
+    let bk = 0, bc = -1;
+    for (let k = 0; k < 32768; k++) if (bins[k] > bc) { bc = bins[k]; bk = k; }
+    let sr = 0, sg = 0, sb = 0, sc = 0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!mask[i] || inside[i] < 2 || dd[i] <= 2.3) continue;
+        const k = (by + y) * W + bx + x, j = k << 2;
+        if (gray[k] < 140) continue;
+        if ((((rgba[j] >> 3) << 10) | ((rgba[j + 1] >> 3) << 5) | (rgba[j + 2] >> 3)) === bk) { sr += rgba[j]; sg += rgba[j + 1]; sb += rgba[j + 2]; sc++; }
+      }
+    }
+    const cr = sr / sc, cg = sg / sc, cb = sb / sc;
+    if (cr >= thrW && cg >= thrW && cb >= thrW) continue;    // nền trắng: thuộc bước khung trắng
+    let flat = 0;
+    const isFlat = new Uint8Array(n);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!mask[i] || inside[i] < 2 || dd[i] <= 2.3) continue;
+        const j = ((by + y) * W + bx + x) << 2;
+        if (Math.abs(rgba[j] - cr) <= tol && Math.abs(rgba[j + 1] - cg) <= tol && Math.abs(rgba[j + 2] - cb) <= tol) { isFlat[i] = 1; flat++; }
+      }
+    }
+    if (flat < 0.72 * cnt) continue;               // không phải nền phẳng
+    // điểm xuất phát loang: chỗ nền phẳng xa viền nhất
+    const picks = [];
+    for (let k = 0; k < 3; k++) {
+      let bi = -1, bv = 0;
+      for (let i = 0; i < n; i++) {
+        if (!isFlat[i] || inside[i] <= bv) continue;
+        const y = (i / w) | 0, x = i - y * w;
+        let near = false;
+        for (const q of picks) if (Math.abs(q[0] - x) + Math.abs(q[1] - y) < Math.max(8, 0.2 * Math.min(w, h))) { near = true; break; }
+        if (!near) { bi = i; bv = inside[i]; }
+      }
+      if (bi < 0) break;
+      const y = (bi / w) | 0;
+      picks.push([bi - y * w, y]);
+    }
+    vis2.fill(0);
+    for (const [px, py] of picks) {
+      const sx = bx + px, sy = by + py;
+      if (vis2[sy * W + sx]) continue;
+      let r0 = 0, g0 = 0, b0 = 0, c0 = 0;
+      for (let y = Math.max(0, sy - 1); y <= Math.min(H - 1, sy + 1); y++) {
+        for (let x = Math.max(0, sx - 1); x <= Math.min(W - 1, sx + 1); x++) { const j = (y * W + x) << 2; r0 += rgba[j]; g0 += rgba[j + 1]; b0 += rgba[j + 2]; c0++; }
+      }
+      r0 /= c0; g0 /= c0; b0 /= c0;
+      const t2 = (i) => { const j = i << 2; return Math.abs(rgba[j] - r0) <= tol && Math.abs(rgba[j + 1] - g0) <= tol && Math.abs(rgba[j + 2] - b0) <= tol; };
+      const st2 = floodScan(t2, vis2, W, H, sx, sy, maxArea);
+      if (!st2.spans || st2.area < minArea) continue;
+      const rc = regionFromSpans(st2);
+      const inter = overlapCount(rb, rc);
+      if (inter / (rb.area + rc.area - inter) < 0.5) continue;   // không trùng ô trắng ở ảnh đen trắng
+      const a = analyzeRegion(ctx, rc);
+      const ok = rc.whiteArea / rc.area >= 0.35 && a.inkC >= 0.008 && a.inkC <= 0.45 && a.midC <= 0.25 &&
+        a.darkB >= 0.008 && a.darkB <= 0.45 && a.midB <= 0.35 && (opt.sameness === false || a.same <= 0.8);
+      if (!ok) continue;
+      // phải giống chữ ở cả hai ảnh (không phải khuôn mặt, tông chấm hay hoạ tiết)
+      const bc = new Uint8Array(rc.w * rc.h), bb = new Uint8Array(rc.w * rc.h);
+      for (let y = 0; y < rc.h; y++) {
+        for (let x = 0; x < rc.w; x++) {
+          const i = y * rc.w + x;
+          if (!rc.mask[i]) continue;
+          const k = (rc.y + y) * W + rc.x + x;
+          if (gray[k] < 140) bc[i] = 1;
+          if (bw[k] < 140) bb[i] = 1;
+        }
+      }
+      const ext = Math.max(5, Math.round(7 * Math.max(W, H) / 1800));
+      // ô chữ thường vuông vức hoặc bầu dục; chữ cách viền một khoảng (nét vẽ / tông chấm thì chạm viền)
+      if (rc.area < 0.88 * rc.w * rc.h) {
+        let ei = 0, eu = 0;                      // không vuông vức thì phải gần với hình bầu dục
+        for (let y = 0; y < rc.h; y++) {
+          const ny = (2 * (y + 0.5)) / rc.h - 1;
+          for (let x = 0; x < rc.w; x++) {
+            const nx = (2 * (x + 0.5)) / rc.w - 1, inE = nx * nx + ny * ny <= 1, inM = rc.mask[y * rc.w + x] === 1;
+            if (inE && inM) ei++;
+            if (inE || inM) eu++;
+          }
+        }
+        if (ei / eu < 0.9) continue;
+      }
+      const rin = distToZero(rc.mask, rc.w, rc.h, true), edgeD = Math.max(3, Math.round(3.5 * Math.max(W, H) / 1800));
+      let nEdge = 0, nInk = 0;
+      for (let i = 0; i < bc.length; i++) { if (bc[i] || bb[i]) { nInk++; if (rin[i] < edgeD) nEdge++; } }
+      if (nInk && nEdge / nInk > 0.1) continue;
+      const ic = inkBlobs(bc, rc.w, rc.h, ext), ib = inkBlobs(bb, rc.w, rc.h, ext);
+      rc.text = { colBig: ic.big, bwBig: ib.big, colFrac: ic.total ? ic.bigPx / ic.total : 0, bwFrac: ib.total ? ib.bigPx / ib.total : 0, colMax: ic.maxBlob / rc.area, bwMax: ib.maxBlob / rc.area };
+      if (ic.big < 5 || ib.big < 5 || rc.text.colFrac < 0.5 || rc.text.bwFrac < 0.5 || rc.text.colMax > 0.06 || rc.text.bwMax > 0.06) continue;   // chữ: nhiều mảng cỡ nét, không có mảng đặc to
+      let dup = 0;
+      for (const e of out) dup += overlapCount(rc, e);
+      if (dup >= 0.3 * rc.area) break;
+      rc.seed = [sx, sy]; rc.stats = a; rc.kind = 'tint';
+      out.push(rc);
+      break;
+    }
+  }
+  return out;
+}
+
+async function detectRegions(ctx, opt, onProgress) {
+  opt = opt || {};
+  const { W, H, rgba } = ctx;
+  const N = W * H;
+  const tol = opt.tol != null ? opt.tol : 26;
+  const thr = 255 - tol;
+  const minArea = Math.max(300, Math.round(N * 0.0004));
+  const maxArea = Math.round(N * 0.2);
+  const visited = new Uint8Array(N);
+  const test = (i) => { const j = i << 2; return rgba[j] >= thr && rgba[j + 1] >= thr && rgba[j + 2] >= thr; };
+  const out = [], rejected = [];
+  const tinted = opt.tinted !== false && !!ctx.bw, pA = tinted ? 0.5 : 1;
+  for (let y = 0; y < H; y++) {
+    if ((y & 63) === 0) { if (onProgress) onProgress(pA * y / H); await yieldUI(); }
+    const row = y * W;
+    for (let x = 0; x < W; x++) {
+      const i = row + x;
+      if (visited[i] || !test(i)) continue;
+      const st = floodScan(test, visited, W, H, x, y, maxArea);
+      if (!st.spans || st.area < minArea) continue;
+      const bwid = st.maxx - st.minx + 1, bh = st.maxy - st.miny + 1;
+      if (bwid < 24 || bh < 24) continue;
+      if (bwid / bh > 14 || bh / bwid > 14) continue;
+      if (st.contact > 0.5 * Math.sqrt(st.area)) continue;
+      const reg = regionFromSpans(st);
+      reg.seed = [x, y];
+      const a = analyzeRegion(ctx, reg);
+      reg.stats = a;
+      const ok = reg.whiteArea / reg.area >= 0.35 && a.inkC >= 0.008 && a.inkC <= 0.65 && a.midC <= 0.25 &&
+        a.darkB >= 0.008 && a.darkB <= 0.65 && a.midB <= 0.35 && (opt.sameness === false || a.same <= 0.8);
+      if (ok) { reg.kind = 'bubble'; out.push(reg); } else rejected.push(reg);
+    }
+  }
+  if (tinted) {
+    const extra = await detectTinted(ctx, { tol, minArea, maxArea, sameness: opt.sameness }, out, (p) => { if (onProgress) onProgress(0.5 + 0.5 * p); });
+    for (const r of extra) out.push(r);
+  }
+  const band = Math.max(1, H / 8);
+  out.sort((p, q) => {
+    const bp = Math.floor((p.y + p.h / 2) / band), bq = Math.floor((q.y + q.h / 2) / band);
+    return bp !== bq ? bp - bq : (q.x + q.w / 2) - (p.x + p.w / 2);
+  });
+  return { regions: out, rejected };
+}
+
+/* --------------------------------------------- căn tinh từng khung (±px) */
+function snapByRing(reg, ctx, range) {
+  const { W, H, gray, bw } = ctx;
+  const { x: bx, y: by, w, h, mask } = reg;
+  const none = { dx: 0, dy: 0, gain: 0 };
+  const Rm = Math.min(40, Math.max(range, Math.round(range * 2.5)));
+  const m = Rm + 10;
+  const x0 = Math.max(0, bx - m), y0 = Math.max(0, by - m), x1 = Math.min(W, bx + w + m), y1 = Math.min(H, by + h + m);
+  const ww = x1 - x0, wh = y1 - y0;
+  if (ww < 24 || wh < 24) return none;
+  // bản đồ nét (độ lớn đạo hàm) của ảnh màu và ảnh đen trắng đã căn, chỉ trong cửa sổ quanh khung
+  const gc = new Float32Array(ww * wh), gb = new Float32Array(ww * wh);
+  for (let y = 0; y < wh; y++) for (let x = 0; x < ww; x++) { const i = (y0 + y) * W + x0 + x; gc[y * ww + x] = gray[i]; gb[y * ww + x] = bw[i]; }
+  const FC = featureMap(gc, ww, wh), FB = featureMap(gb, ww, wh);
+  // vành quanh viền khung: trong mặt nạ cách mép ≤ 7, ngoài mặt nạ cách mép ≤ 4 (bỏ phần giữa, nơi chữ Nhật và chữ Việt khác nhau)
+  const RO = 4, RI = 7;
+  const pw = w + 2 * RO, ph = h + 2 * RO;
+  const inv = new Uint8Array(pw * ph).fill(1);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (mask[y * w + x]) inv[(y + RO) * pw + x + RO] = 0;
+  const dOut = distToZero(inv, pw, ph, false);
+  const dIn = distToZero(mask, w, h, true);
+  const P = [];
+  for (let y = 0; y < ph; y++) {
+    for (let x = 0; x < pw; x++) {
+      const ax = bx + x - RO - x0, ay = by + y - RO - y0;
+      if (ax < 0 || ay < 0 || ax >= ww || ay >= wh) continue;
+      const i = y * pw + x;
+      if (inv[i] ? dOut[i] <= RO : dIn[(y - RO) * w + (x - RO)] <= RI) P.push(ay * ww + ax);
+    }
+  }
+  if (P.length > 3600) { const st = Math.ceil(P.length / 3000), Q = []; for (let k = 0; k < P.length; k += st) Q.push(P[k]); P.length = 0; for (const q of Q) P.push(q); }
+  const n = P.length;
+  if (n < 120) return none;
+  let sC = 0, sCC = 0;
+  for (let k = 0; k < n; k++) { const c = FC[P[k]]; sC += c; sCC += c * c; }
+  const vC = sCC - (sC * sC) / n;
+  if (vC < 1e-3 * n) return none;                 // viền không có nét nào để bám
+  const ncc = (sx, sy) => {
+    const off = sy * ww + sx;
+    let sB = 0, sBB = 0, sCB = 0;
+    for (let k = 0; k < n; k++) {
+      const p = P[k];
+      const px = p % ww + sx, py = ((p / ww) | 0) + sy;
+      const b = px < 0 || py < 0 || px >= ww || py >= wh ? 0 : FB[p + off];
+      sB += b; sBB += b * b; sCB += FC[p] * b;
+    }
+    const vB = sBB - (sB * sB) / n;
+    if (vB < 1e-3 * n) return -1;
+    return (sCB - (sC * sB) / n) / Math.sqrt(vC * vB);
+  };
+  const score = (sx, sy) => ncc(sx, sy) - 0.0015 * (Math.abs(sx) + Math.abs(sy));
+  const base = score(0, 0);
+  let best = base, bdx = 0, bdy = 0;
+  for (let sy = -Rm; sy <= Rm; sy += 2) {
+    for (let sx = -Rm; sx <= Rm; sx += 2) {
+      if (!sx && !sy) continue;
+      const v = score(sx, sy);
+      if (v > best) { best = v; bdx = sx; bdy = sy; }
+    }
+  }
+  const cx0 = bdx, cy0 = bdy;
+  for (let sy = cy0 - 2; sy <= cy0 + 2; sy++) {
+    for (let sx = cx0 - 2; sx <= cx0 + 2; sx++) {
+      if ((sx === cx0 && sy === cy0) || Math.abs(sx) > Rm || Math.abs(sy) > Rm) continue;
+      const v = score(sx, sy);
+      if (v > best) { best = v; bdx = sx; bdy = sy; }
+    }
+  }
+  if (best < 0.28 || best - base < 0.02) return none;
+  const c0 = score(bdx, bdy), xm = score(bdx - 1, bdy), xp = score(bdx + 1, bdy), ym = score(bdx, bdy - 1), yp = score(bdx, bdy + 1);
+  let fx = 0, fy = 0;
+  const dxx = xm - 2 * c0 + xp, dyy = ym - 2 * c0 + yp;
+  if (dxx < -1e-7) fx = clamp((0.5 * (xm - xp)) / dxx, -0.5, 0.5);
+  if (dyy < -1e-7) fy = clamp((0.5 * (ym - yp)) / dyy, -0.5, 0.5);
+  return { dx: bdx + fx, dy: bdy + fy, gain: (best - base) * 100 };
+}
+
+/* --------------------------------- căn tinh từng khung theo HÌNH viền khung (dịch + co giãn nhẹ) */
+function solveN(M, b, n) {
+  const A = Float64Array.from(M), x = Float64Array.from(b);
+  for (let c = 0; c < n; c++) {
+    let p = c, mv = Math.abs(A[c * n + c]);
+    for (let r = c + 1; r < n; r++) { const v = Math.abs(A[r * n + c]); if (v > mv) { mv = v; p = r; } }
+    if (mv < 1e-12) return null;
+    if (p !== c) { for (let k = 0; k < n; k++) { const t = A[c * n + k]; A[c * n + k] = A[p * n + k]; A[p * n + k] = t; } const t = x[c]; x[c] = x[p]; x[p] = t; }
+    for (let r = c + 1; r < n; r++) {
+      const f = A[r * n + c] / A[c * n + c];
+      if (!f) continue;
+      for (let k = c; k < n; k++) A[r * n + k] -= f * A[c * n + k];
+      x[r] -= f * x[c];
+    }
+  }
+  for (let r = n - 1; r >= 0; r--) { let sm = x[r]; for (let k = r + 1; k < n; k++) sm -= A[r * n + k] * x[k]; x[r] = sm / A[r * n + r]; }
+  return x;
+}
+
+// Dựng mặt nạ trắng của khung ở ảnh đen trắng đã căn rồi khớp đường viền của nó với đường viền mặt nạ ở ảnh màu.
+// Trả {dx,dy,ex,ey,gain}: điểm ảnh màu P lấy mẫu ảnh đen trắng đã căn tại P + (dx,dy) + (ex,ey)·(P − tâm khung). null nếu không đủ tin.
+function snapByShape(reg, ctx, range) {
+  if (!reg.seed || !ctx.bw) return null;
+  const { W, H, bw } = ctx;
+  const { x: bx, y: by, w, h, mask } = reg;
+  const Rm = Math.min(40, Math.max(range, Math.round(range * 2.5)));
+  const mg = Rm + 12;
+  const x0 = Math.max(0, bx - mg), y0 = Math.max(0, by - mg), x1 = Math.min(W, bx + w + mg), y1 = Math.min(H, by + h + mg);
+  const ww = x1 - x0, wh = y1 - y0;
+  if (ww < 24 || wh < 24) return null;
+  const inside = distToZero(mask, w, h, true);
+  let maxIn = 0;
+  for (let i = 0; i < inside.length; i++) if (inside[i] > maxIn) maxIn = inside[i];
+  if (maxIn < 4) return null;
+  // mức trắng của giấy ở ảnh đen trắng = bách phân vị 90 trong lòng khung
+  const hist = new Uint32Array(256);
+  let cnt = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (mask[i] && inside[i] >= 3) { hist[bw[(by + y) * W + bx + x]]++; cnt++; } }
+  if (cnt < 100) return null;
+  let acc = 0, pw = 255;
+  for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc >= cnt * 0.1) { pw = v; break; } }
+  if (pw < 130) return null;                       // khung nền tối: để bước bám vành lo
+  const thr = Math.max(100, pw - 32);
+  const white = new Uint8Array(ww * wh);
+  for (let y = 0; y < wh; y++) { const r = (y0 + y) * W + x0, o = y * ww; for (let x = 0; x < ww; x++) white[o + x] = bw[r + x] >= thr ? 1 : 0; }
+  const visited = new Uint8Array(ww * wh);
+  const cap = Math.round(reg.area * 2.6) + 500;
+  const test = (i) => white[i] === 1;
+  const stp = Math.max(3, Math.round(Math.min(w, h) / 20)), minIn = Math.max(2, maxIn * 0.25);
+  let best = null;
+  for (let y = 0; y < h; y += stp) {
+    for (let x = 0; x < w; x += stp) {
+      const li = y * w + x;
+      if (!mask[li] || inside[li] < minIn) continue;
+      const sx = bx + x - x0, sy = by + y - y0, si = sy * ww + sx;
+      if (visited[si] || !white[si]) continue;
+      const st = floodScan(test, visited, ww, wh, sx, sy, cap);
+      if (!st.spans) return null;                  // vùng trắng tràn ra ngoài: viền hở, không tin
+      if (!best || st.area > best.area) best = st;
+    }
+  }
+  if (!best || best.contact > 0 || best.area < 0.3 * reg.area) return null;
+  const rb = regionFromSpans(best);                // đã lấp lỗ chữ
+  const MB = new Uint8Array(ww * wh), inv = new Uint8Array(ww * wh).fill(1);
+  for (let y = 0; y < rb.h; y++) for (let x = 0; x < rb.w; x++) if (rb.mask[y * rb.w + x]) { const i = (rb.y + y) * ww + rb.x + x; MB[i] = 1; inv[i] = 0; }
+  const dIn = distToZero(MB, ww, wh, false), dOut = distToZero(inv, ww, wh, false);
+  const sd = new Float32Array(ww * wh);              // khoảng cách có dấu tới viền (dương ở trong)
+  for (let i = 0; i < sd.length; i++) sd[i] = MB[i] ? dIn[i] - 0.5 : 0.5 - dOut[i];
+  // điểm viền của mặt nạ ảnh màu
+  const P = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!mask[i]) continue;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1 || !mask[i - 1] || !mask[i + 1] || !mask[i - w] || !mask[i + w]) P.push(bx + x - x0, by + y - y0);
+    }
+  }
+  const n0 = P.length >> 1;
+  if (n0 < 40) return null;
+  const stride = Math.max(1, Math.ceil(n0 / 700));
+  const px = [], py = [];
+  for (let k = 0; k < n0; k += stride) { px.push(P[2 * k]); py.push(P[2 * k + 1]); }
+  const n = px.length;
+  const ccx = bx + w / 2 - x0, ccy = by + h / 2 - y0, L = Math.max(w, h) / 2;
+  const tau = Math.max(4, range * 0.75);
+  const sdAt = (x, y) => {
+    x = x < 0 ? 0 : x > ww - 1.001 ? ww - 1.001 : x; y = y < 0 ? 0 : y > wh - 1.001 ? wh - 1.001 : y;
+    const ix = x | 0, iy = y | 0, fx = x - ix, fy = y - iy, o = iy * ww + ix;
+    return (sd[o] * (1 - fx) + sd[o + 1] * fx) * (1 - fy) + (sd[o + ww] * (1 - fx) + sd[o + ww + 1] * fx) * fy;
+  };
+  const cost = (tx, ty, ex, ey) => {
+    let sum = 0;
+    for (let k = 0; k < n; k++) {
+      const r = Math.abs(sdAt(px[k] + tx + ex * (px[k] - ccx), py[k] + ty + ey * (py[k] - ccy)) - 0.5);
+      sum += r < tau ? r : tau;
+    }
+    return sum / n;
+  };
+  const c0 = cost(0, 0, 0, 0);
+  const ZERO = { dx: 0, dy: 0, ex: 0, ey: 0, gain: 0 };
+  if (c0 < 0.35) return ZERO;                      // viền đã trùng khít
+  let bt = [0, 0], bc = c0;
+  for (let ty = -Rm; ty <= Rm; ty += 2) for (let tx = -Rm; tx <= Rm; tx += 2) {
+    const c = cost(tx, ty, 0, 0) + 0.002 * (Math.abs(tx) + Math.abs(ty));
+    if (c < bc) { bc = c; bt = [tx, ty]; }
+  }
+  { const cx0 = bt[0], cy0 = bt[1];
+    for (let ty = cy0 - 1; ty <= cy0 + 1; ty++) for (let tx = cx0 - 1; tx <= cx0 + 1; tx++) {
+      const c = cost(tx, ty, 0, 0) + 0.002 * (Math.abs(tx) + Math.abs(ty));
+      if (c < bc) { bc = c; bt = [tx, ty]; }
+    } }
+  // Gauss–Newton trên khoảng cách có dấu (tham số 3,4 là độ dời do co giãn tại khoảng L tính từ tâm)
+  const maxSc = Math.min(10, 0.04 * L);
+  const refine = (th0, np) => {
+    const th = th0.slice();
+    for (let it = 0; it < 14; it++) {
+      const A = new Float64Array(16), g = new Float64Array(4);
+      let used = 0;
+      for (let k = 0; k < n; k++) {
+        const dx = (px[k] - ccx) / L, dy = (py[k] - ccy) / L;
+        const qx = px[k] + th[0] + th[2] * dx, qy = py[k] + th[1] + th[3] * dy;
+        const r = sdAt(qx, qy) - 0.5, ar = Math.abs(r);
+        if (ar >= tau) continue;
+        const u = ar / tau, wg = (1 - u * u) * (1 - u * u);
+        const gx = (sdAt(qx + 1, qy) - sdAt(qx - 1, qy)) * 0.5, gy = (sdAt(qx, qy + 1) - sdAt(qx, qy - 1)) * 0.5;
+        const J = [gx, gy, gx * dx, gy * dy];
+        for (let a = 0; a < np; a++) { g[a] += wg * J[a] * r; for (let b = 0; b < np; b++) A[a * np + b] += wg * J[a] * J[b]; }
+        used++;
+      }
+      if (used < 20) break;
+      const M = new Float64Array(np * np), rhs = new Float64Array(np);
+      let tr = 0;
+      for (let a = 0; a < np; a++) tr += A[a * np + a];
+      for (let a = 0; a < np; a++) { for (let b = 0; b < np; b++) M[a * np + b] = A[a * np + b]; M[a * np + a] += 1e-3 * tr / np + 1e-6; rhs[a] = -g[a]; }
+      const d = solveN(M, rhs, np);
+      if (!d) break;
+      let big = 0;
+      for (let a = 0; a < np; a++) {
+        const lim = a < 2 ? 2.5 : 1.5;
+        const v = clamp(d[a], -lim, lim);
+        th[a] += v; big = Math.max(big, Math.abs(v));
+      }
+      if (np > 2) { th[2] = clamp(th[2], -maxSc, maxSc); th[3] = clamp(th[3], -maxSc, maxSc); }
+      if (big < 0.02) break;
+    }
+    return th;
+  };
+  const tt = refine([bt[0], bt[1], 0, 0], 2);
+  const ct = cost(tt[0], tt[1], 0, 0);
+  const t4 = refine([tt[0], tt[1], 0, 0], 4);
+  const c4 = cost(t4[0], t4[1], t4[2] / L, t4[3] / L);
+  let out = { dx: tt[0], dy: tt[1], ex: 0, ey: 0 }, cf = ct;
+  if (c4 < 0.85 * ct && ct > 0.7) { out = { dx: t4[0], dy: t4[1], ex: t4[2] / L, ey: t4[3] / L }; cf = c4; }
+  if (!(c0 - cf >= 0.3 && cf <= 0.8 * c0 && cf < 0.5 * tau)) return ZERO;
+  out.gain = (c0 - cf) * 10;
+  out.cost0 = c0; out.cost = cf;
+  return out;
+}
+
+// Căn tinh từng khung: ưu tiên khớp hình viền; không được thì bám vành gradient
+function snapRegion(reg, ctx, range) {
+  const s = snapByShape(reg, ctx, range);
+  if (s) return s;
+  const r = snapByRing(reg, ctx, range);
+  return { dx: r.dx, dy: r.dy, ex: 0, ey: 0, gain: r.gain || 0 };
+}
+
+/* ----------------------------------------------------- nội suy nền (pull-push) */
+function inpaintPushPull(rgba, w, h, hole, known) {
+  let val = new Float32Array(w * h * 3), wt = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    if (known[i] && !hole[i]) { wt[i] = 1; val[i * 3] = rgba[i * 4]; val[i * 3 + 1] = rgba[i * 4 + 1]; val[i * 3 + 2] = rgba[i * 4 + 2]; }
+  }
+  const lv = [{ w, h, val, wt }];
+  let cw = w, ch = h;
+  while (cw > 1 || ch > 1) {
+    const nw = (cw + 1) >> 1, nh = (ch + 1) >> 1;
+    const nv = new Float32Array(nw * nh * 3), nwt = new Float32Array(nw * nh);
+    for (let y = 0; y < nh; y++) {
+      for (let x = 0; x < nw; x++) {
+        let sw = 0, r = 0, g = 0, b = 0, cnt = 0;
+        for (let dy = 0; dy < 2; dy++) {
+          const yy = 2 * y + dy;
+          if (yy >= ch) continue;
+          for (let dx = 0; dx < 2; dx++) {
+            const xx = 2 * x + dx;
+            if (xx >= cw) continue;
+            cnt++;
+            const i = yy * cw + xx, ww = wt[i];
+            if (ww > 0) { sw += ww; r += val[i * 3] * ww; g += val[i * 3 + 1] * ww; b += val[i * 3 + 2] * ww; }
+          }
+        }
+        const o = y * nw + x;
+        if (sw > 0) { nv[o * 3] = r / sw; nv[o * 3 + 1] = g / sw; nv[o * 3 + 2] = b / sw; nwt[o] = sw / cnt; }
+      }
+    }
+    lv.push({ w: nw, h: nh, val: nv, wt: nwt });
+    cw = nw; ch = nh; val = nv; wt = nwt;
+  }
+  if (lv[lv.length - 1].wt[0] <= 0) return false;
+  for (let l = lv.length - 2; l >= 0; l--) {
+    const f = lv[l], c = lv[l + 1];
+    for (let y = 0; y < f.h; y++) {
+      const v = clamp((y + 0.5) * 0.5 - 0.5, 0, c.h - 1);
+      const v0 = v | 0, v1 = Math.min(c.h - 1, v0 + 1), fy = v - v0;
+      for (let x = 0; x < f.w; x++) {
+        const i = y * f.w + x;
+        const wgt = f.wt[i];
+        if (wgt >= 1) continue;
+        const u = clamp((x + 0.5) * 0.5 - 0.5, 0, c.w - 1);
+        const u0 = u | 0, u1 = Math.min(c.w - 1, u0 + 1), fx = u - u0;
+        for (let k = 0; k < 3; k++) {
+          const a = c.val[(v0 * c.w + u0) * 3 + k] * (1 - fx) + c.val[(v0 * c.w + u1) * 3 + k] * fx;
+          const b = c.val[(v1 * c.w + u0) * 3 + k] * (1 - fx) + c.val[(v1 * c.w + u1) * 3 + k] * fx;
+          const interp = a * (1 - fy) + b * fy;
+          f.val[i * 3 + k] = wgt * f.val[i * 3 + k] + (1 - wgt) * interp;
+        }
+        f.wt[i] = 1;
+      }
+    }
+  }
+  const f0 = lv[0];
+  for (let i = 0; i < w * h; i++) {
+    if (hole[i]) { rgba[i * 4] = f0.val[i * 3]; rgba[i * 4 + 1] = f0.val[i * 3 + 1]; rgba[i * 4 + 2] = f0.val[i * 3 + 2]; }
+  }
+  return true;
+}
+
+// Bỏ các cụm điểm ảnh nhỏ (chấm tông) khỏi lớp chữ
+function despeckle(alpha, w, h, minArea) {
+  const lab = new Uint8Array(w * h);
+  const stack = [];
+  for (let s = 0; s < w * h; s++) {
+    if (alpha[s] < 0.5 || lab[s]) continue;
+    const comp = [s];
+    lab[s] = 1; stack.length = 0; stack.push(s);
+    while (stack.length) {
+      const i = stack.pop();
+      const x = i % w;
+      if (x > 0 && !lab[i - 1] && alpha[i - 1] >= 0.5) { lab[i - 1] = 1; stack.push(i - 1); comp.push(i - 1); }
+      if (x < w - 1 && !lab[i + 1] && alpha[i + 1] >= 0.5) { lab[i + 1] = 1; stack.push(i + 1); comp.push(i + 1); }
+      if (i >= w && !lab[i - w] && alpha[i - w] >= 0.5) { lab[i - w] = 1; stack.push(i - w); comp.push(i - w); }
+      if (i + w < w * h && !lab[i + w] && alpha[i + w] >= 0.5) { lab[i + w] = 1; stack.push(i + w); comp.push(i + w); }
+    }
+    if (comp.length < minArea) {
+      for (const i of comp) {
+        const x = i % w, y = (i - x) / w;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            const q = ny * w + nx;
+            if (alpha[q] < 0.5) alpha[q] = 0;
+          }
+        }
+        alpha[i] = 0;
+      }
+    }
+  }
+}
+
+/* ---------------------------------------- lấy mẫu ảnh đen trắng gốc cho từng khung (siêu mẫu) */
+function supersampleFor(ctx) {
+  if (ctx._ssF) return ctx._ssF;
+  const ratio = Math.max(ctx.src.w / ctx.rect.rw, ctx.src.h / ctx.rect.rh);
+  return (ctx._ssF = (ratio < 1.0 || ratio > 2.2) ? 3 : 2);
+}
+// Lấy mẫu vùng (bx,by,w,h) của ảnh màu từ ảnh đen trắng GỐC, mỗi điểm ảnh màu chia SS×SS mẫu; (sx,sy) là độ dời thêm (điểm ảnh màu).
+function sampleRegion(ctx, bx, by, w, h, SS, sx, sy, fillV, ex, ey, ccx, ccy) {
+  ctx._sp = ctx._sp || {};
+  const sp = ctx._sp[SS] || (ctx._sp[SS] = prepSource(ctx.src.gray, ctx.src.w, ctx.src.h, ctx.rect, SS));
+  const rect = ctx.rect, wp = rect.warp, kx = sp.kx, ky = sp.ky, wB = sp.wB, hB = sp.hB;
+  const nw = w * SS, nh = h * SS, out = new Float32Array(nw * nh);
+  ex = ex || 0; ey = ey || 0;
+  let wdx = null, wdy = null;
+  if (wp) {
+    wdx = new Float32Array(w * h); wdy = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const qx = bx + x + 0.5, qy = by + y + 0.5;
+        warpAt(wp, qx + sx + ex * (qx - ccx), qy + sy + ey * (qy - ccy)); wdx[y * w + x] = _wd[0]; wdy[y * w + x] = _wd[1];
+      }
+    }
+  }
+  for (let Y = 0; Y < nh; Y++) {
+    const y = (Y / SS) | 0, py = by + (Y + 0.5) / SS, cy0 = py + sy + ey * (py - ccy), o = Y * nw;
+    for (let X = 0; X < nw; X++) {
+      const x = (X / SS) | 0, pxx = bx + (X + 0.5) / SS;
+      let cx = pxx + sx + ex * (pxx - ccx), cy = cy0;
+      if (wdx) { cx += wdx[y * w + x]; cy += wdy[y * w + x]; }
+      const u = (cx - rect.ox) * kx, v = (cy - rect.oy) * ky;
+      out[o + X] = (u < 0 || v < 0 || u >= wB || v >= hB) ? fillV : cubicAt(sp.a, sp.sw, sp.sh, u / sp.pfx - 0.5, v / sp.pfy - 0.5);
+    }
+  }
+  return out;
+}
+
+/* -------------------------------------------- xoá chữ Nhật + dán chữ Việt */
+function defaultOpt(ctx) {
+  const k = Math.max(ctx.W, ctx.H) / 1800;
+  return {
+    fill: 'flat', tol: 30, inkGray: 110,
+    grow: clamp(Math.round(3 * k), 2, 6), edge: clamp(Math.round(2 * k), 1, 5),
+    sens: 0, soft: 0.35, invert: 'auto', textColor: null, shiftX: 0, shiftY: 0,
+  };
+}
+
+function buildPatch(reg, ctx) {
+  const { W, H, rgba, gray, bw } = ctx;
+  const o = Object.assign(defaultOpt(ctx), reg.opt || {});
+  const { x: bx, y: by, w, h, mask } = reg;
+  const n = w * h;
+  const crop = new Uint8ClampedArray(n * 4);
+  const cg = new Uint8Array(n);
+  for (let y = 0; y < h; y++) {
+    const s = ((by + y) * W + bx) * 4;
+    crop.set(rgba.subarray(s, s + w * 4), y * w * 4);
+    cg.set(gray.subarray((by + y) * W + bx, (by + y) * W + bx + w), y * w);
+  }
+  // màu nền: màu xuất hiện nhiều nhất trong vùng
+  const bins = new Uint32Array(32768);
+  for (let i = 0; i < n; i++) {
+    if (!mask[i]) continue;
+    const j = i << 2;
+    bins[((crop[j] >> 3) << 10) | ((crop[j + 1] >> 3) << 5) | (crop[j + 2] >> 3)]++;
+  }
+  let bk = 0, bc = -1;
+  for (let k = 0; k < 32768; k++) if (bins[k] > bc) { bc = bins[k]; bk = k; }
+  let sr = 0, sg = 0, sb = 0, sc = 0;
+  for (let i = 0; i < n; i++) {
+    if (!mask[i]) continue;
+    const j = i << 2;
+    if ((((crop[j] >> 3) << 10) | ((crop[j + 1] >> 3) << 5) | (crop[j + 2] >> 3)) === bk) { sr += crop[j]; sg += crop[j + 1]; sb += crop[j + 2]; sc++; }
+  }
+  let bgR = sc ? Math.round(sr / sc) : 255, bgG = sc ? Math.round(sg / sc) : 255, bgB = sc ? Math.round(sb / sc) : 255;
+  if (bgR >= 246 && bgG >= 246 && bgB >= 246) { bgR = bgG = bgB = 255; }
+  const lumBg = (bgR * 77 + bgG * 150 + bgB * 29) >> 8;
+  const invert = o.invert === 'auto' ? lumBg < 100 : !!o.invert;
+
+  // chữ gốc (ink)
+  const ink = new Uint8Array(n);
+  let inkN = 0;
+  if (o.fill === 'flat') {
+    for (let i = 0; i < n; i++) {
+      if (!mask[i]) continue;
+      const j = i << 2;
+      const d = Math.max(Math.abs(crop[j] - bgR), Math.abs(crop[j + 1] - bgG), Math.abs(crop[j + 2] - bgB));
+      if (d > o.tol) { ink[i] = 1; inkN++; }
+    }
+  } else {
+    for (let i = 0; i < n; i++) {
+      if (!mask[i]) continue;
+      if (invert ? cg[i] > 255 - o.inkGray : cg[i] < o.inkGray) { ink[i] = 1; inkN++; }
+    }
+  }
+  let hole = ink;
+  if (o.fill === 'flat') {
+    hole = mask; // nền phẳng: tô lại toàn bộ vùng, xoá luôn vệt mờ do nén JPEG quanh chữ
+  } else if (o.grow > 0 && inkN) {
+    const nd = new Uint8Array(n);
+    for (let i = 0; i < n; i++) nd[i] = ink[i] ? 0 : 1;
+    const dist = distToZero(nd, w, h, false);
+    hole = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (mask[i] && dist[i] <= o.grow + 0.01) hole[i] = 1;
+  }
+
+  // màu chữ
+  let tcol;
+  if (o.textColor) tcol = o.textColor;
+  else {
+    tcol = invert ? [255, 255, 255] : [0, 0, 0];
+    if (inkN >= 24) {
+      const hist = new Uint32Array(256);
+      for (let i = 0; i < n; i++) if (ink[i]) hist[cg[i]]++;
+      const target = inkN * 0.3;
+      let acc = 0, cut = invert ? 0 : 255;
+      if (!invert) { for (let g = 0; g < 256; g++) { acc += hist[g]; if (acc >= target) { cut = g; break; } } }
+      else { for (let g = 255; g >= 0; g--) { acc += hist[g]; if (acc >= target) { cut = g; break; } } }
+      let r = 0, g2 = 0, b = 0, c = 0;
+      for (let i = 0; i < n; i++) {
+        if (!ink[i]) continue;
+        if (invert ? cg[i] >= cut : cg[i] <= cut) { const j = i << 2; r += crop[j]; g2 += crop[j + 1]; b += crop[j + 2]; c++; }
+      }
+      if (c) tcol = [Math.round(r / c), Math.round(g2 / c), Math.round(b / c)];
+    }
+  }
+
+  // xoá chữ gốc
+  if (o.fill === 'flat') {
+    for (let i = 0; i < n; i++) if (hole[i]) { const j = i << 2; crop[j] = bgR; crop[j + 1] = bgG; crop[j + 2] = bgB; }
+  } else {
+    inpaintPushPull(crop, w, h, hole, mask);
+  }
+
+  // chữ Việt từ ảnh đen trắng
+  const inside = distToZero(mask, w, h, true);
+  const sx = (reg.autoX || 0) + (o.shiftX || 0), sy = (reg.autoY || 0) + (o.shiftY || 0);
+  const fillV = invert ? 0 : 255;
+  const hist2 = new Uint32Array(256);
+  const touched = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (hole[i]) touched[i] = 1;
+  let textPx = 0, cnt = 0;
+  const alpha = new Float32Array(n);
+  const SS = (ctx.src && ctx.rect) ? supersampleFor(ctx) : 1;
+  let gs = null;     // ảnh xám lấy mẫu ở mật độ SS×SS cho mỗi điểm ảnh màu
+  const bv = new Uint8Array(n);
+  if (SS > 1) {
+    gs = sampleRegion(ctx, bx, by, w, h, SS, sx, sy, fillV, reg.autoEX || 0, reg.autoEY || 0, bx + w / 2, by + h / 2);
+    const nw = w * SS, c = SS >> 1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!mask[i] || inside[i] < o.edge) continue;
+        const v = clamp(Math.round(gs[(y * SS + c) * nw + x * SS + c]), 0, 255);
+        bv[i] = v; hist2[v]++; cnt++;
+      }
+    }
+  } else {
+    for (let y = 0; y < h; y++) {
+      const ay = by + y + Math.round(sy);
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!mask[i] || inside[i] < o.edge) continue;
+        const ax = bx + x + Math.round(sx);
+        const v = ax < 0 || ay < 0 || ax >= W || ay >= H ? fillV : bw[ay * W + ax];
+        bv[i] = v; hist2[v]++; cnt++;
+      }
+    }
+  }
+  const pct = (p) => { const t = cnt * p; let acc = 0; for (let v = 0; v < 256; v++) { acc += hist2[v]; if (acc >= t) return v; } return 255; };
+  const bwBg = invert ? pct(0.08) : pct(0.92), bwInk = invert ? pct(0.99) : pct(0.01);
+  const span = Math.abs(bwBg - bwInk);
+  if (cnt > 0 && span >= 45) {
+    const c0 = 0.5 - o.sens / 100;
+    if (SS > 1) {
+      // dựng độ phủ ở độ phân giải siêu mẫu rồi lấy trung bình về điểm ảnh màu: nét chữ trơn, không răng cưa
+      const wd = Math.max(0.07, o.soft * 0.4), inv = 1 / (2 * wd), den = bwBg - bwInk, nw = w * SS, area = SS * SS;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = y * w + x;
+          if (!mask[i] || inside[i] < o.edge) continue;
+          let acc = 0;
+          for (let dy = 0; dy < SS; dy++) {
+            const row = (y * SS + dy) * nw + x * SS;
+            for (let dx = 0; dx < SS; dx++) {
+              const t = (bwBg - gs[row + dx]) / den;       // 0 = nền, 1 = mực (đã xử lý chiều đảo qua dấu của den)
+              const aa = (t - (c0 - wd)) * inv;
+              acc += aa < 0 ? 0 : aa > 1 ? 1 : aa;
+            }
+          }
+          alpha[i] = acc / area;
+        }
+      }
+    } else {
+      const wd = o.soft;
+      for (let i = 0; i < n; i++) {
+        if (!mask[i] || inside[i] < o.edge) continue;
+        const t = (bwBg - bv[i]) / (bwBg - bwInk);
+        alpha[i] = clamp((t - (c0 - wd)) / (2 * wd), 0, 1);
+      }
+    }
+    // chữ trên nền tranh: lọc các chấm tông nhỏ của ảnh đen trắng
+    if (o.fill !== 'flat' && o.despeckle !== false) despeckle(alpha, w, h, Math.max(8, Math.round(10 * (Math.max(W, H) / 1800) ** 2)));
+  }
+  for (let i = 0; i < n; i++) {
+    const a = alpha[i];
+    if (a < 0.004) continue;
+    const j = i << 2;
+    crop[j] += (tcol[0] - crop[j]) * a;
+    crop[j + 1] += (tcol[1] - crop[j + 1]) * a;
+    crop[j + 2] += (tcol[2] - crop[j + 2]) * a;
+    touched[i] = 1; textPx++;
+  }
+  for (let i = 0; i < n; i++) crop[(i << 2) + 3] = touched[i] ? 255 : 0;
+  return { x: bx, y: by, w, h, data: crop, stats: { inkN, bg: [bgR, bgG, bgB], text: tcol, invert, bwBg, bwInk, span, textPx } };
+}
+
+G.GCV = {
+  clamp, rgbaToGray, colorfulness, resizeArea, alignImages, refineWarp, renderAligned, mapToBw, prepSource, cubicAt, warpAt,
+  distToZero, fillHoles, floodScan, regionFromSpans, regionFromRect, regionFromPolygon,
+  floodRegionAt, detectRegions, analyzeRegion, snapRegion, inpaintPushPull, defaultOpt, buildPatch,
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = G.GCV;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+</script>
+<script>
+(() => {
+'use strict';
+const GCV = window.GCV;
+const clamp = GCV.clamp;
+const $ = (id) => document.getElementById(id);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
+const yieldUI = () => new Promise((r) => setTimeout(r, 0));
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const fmt1 = (v) => (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
+const fmt2 = (v) => (Math.round(v * 100) / 100).toFixed(2).replace('.', ',');
+
+const S = {
+  useWarp: true, bw: null, col: null, rect: null, rect0: null, bwAl: null, bwCanvas: null, ctx: null,
+  regions: [], nextId: 1, sel: null,
+  view: 'result', tool: 'select', zoom: 1, fit: true, tol: 26, busy: false, sample: false,
+  showOverlay: true, fmt: 'png', quality: 95, gen: 0, space: false, drag: null, tinted: true,
+};
+const B = { pages: [], cur: -1, lists: { bw: [], col: [] }, cancel: false, job: false };
+const els = {
+  scroller: $('scroller'), sheet: $('sheet'), view: $('view'), over: $('over'), stage: $('stage'),
+  busy: $('busy'), busyMsg: $('busyMsg'), busyBar: $('busyBar'), toast: $('toast'), hint: $('hint'), coord: $('coord'),
+  list: $('regionList'), insp: $('insp'), tag: $('sampleTag'),
+};
+const KIND = { bubble: 'Khung thoại', tint: 'Ô nền màu', rect: 'Ô chữ nhật', lasso: 'Vẽ tay' };
+const HINTS = {
+  select: 'Bấm vào khung để chọn. Kéo để di chuyển ảnh. Ctrl + lăn chuột để thu phóng.',
+  bubble: 'Bấm vào phần nền bên trong khung thoại (trắng hoặc màu phẳng). Bấm lên chữ cũng được.',
+  rect: 'Kéo một hình chữ nhật bao quanh chữ cần thay.',
+  lasso: 'Giữ chuột và vẽ vòng quanh chữ cần thay, thả chuột để khép vùng.',
+};
+
+/* ------------------------------------------------------------ tiện ích giao diện */
+let toastTimer = 0;
+function toast(msg, kind) {
+  els.toast.textContent = msg;
+  els.toast.className = 'toast show' + (kind === 'warn' ? ' warn' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { els.toast.className = 'toast' + (kind === 'warn' ? ' warn' : ''); }, kind === 'warn' ? 5200 : 2800);
+}
+function setBusy(msg, p) {
+  S.busy = !!msg;
+  els.busy.hidden = !msg;
+  $('busyCancel').hidden = !(msg && B.job);
+  if (B.pages.length) updatePagesHead();
+  if (msg) { els.busyMsg.textContent = msg; els.busyBar.style.width = Math.round(clamp(p == null ? 0.1 : p, 0.04, 1) * 100) + '%'; }
+}
+function thumbOf(c) {
+  const k = Math.min(1, 280 / Math.max(c.width, c.height));
+  const t = mk(Math.max(1, Math.round(c.width * k)), Math.max(1, Math.round(c.height * k)));
+  const g = t.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(c, 0, 0, t.width, t.height);
+  return t.toDataURL('image/jpeg', 0.82);
+}
+
+/* ------------------------------------------------------------ nạp ảnh */
+function sourceFromCanvas(c, name) {
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const id = g.getImageData(0, 0, c.width, c.height);
+  return {
+    name, w: c.width, h: c.height, rgba: id.data, canvas: c,
+    gray: GCV.rgbaToGray(id.data, c.width * c.height),
+    cf: GCV.colorfulness(id.data, c.width, c.height), thumb: thumbOf(c),
+  };
+}
+async function decodeFile(file) {
+  const bmp = await createImageBitmap(file);
+  const c = mk(bmp.width, bmp.height);
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(bmp, 0, 0);
+  if (bmp.close) bmp.close();
+  return sourceFromCanvas(c, file.name || 'anh');
+}
+function slim(src) { src.rgba = null; src.canvas = null; return src; }
+
+async function acceptFiles(files, forced) {
+  files = Array.from(files || []).filter((f) => f.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif)$/i.test(f.name || ''));
+  if (!files.length) { toast('Không thấy tệp ảnh nào. Hãy chọn PNG, JPG hoặc WebP.', 'warn'); return; }
+  if (S.busy) return;
+  const waiting = !B.pages.length && (!!B.lists.bw.length !== !!B.lists.col.length);
+  if (files.length > 2 || (forced && (files.length > 1 || waiting))) { await acceptBatch(files, forced); return; }
+  if (B.pages.length || B.lists.bw.length || B.lists.col.length) leaveBatch();
+  setBusy('Đang đọc ảnh…', 0.05);
+  let items = [];
+  try {
+    for (const f of files.slice(0, 2)) items.push(await decodeFile(f));
+  } catch (e) {
+    setBusy(null);
+    toast('Không đọc được ảnh này. Thử lưu lại thành PNG hoặc JPG.', 'warn');
+    return;
+  }
+  setBusy(null);
+  if (forced) {
+    items = [items[0]];
+    if (forced === 'col' && items[0].cf < 4) toast('Ảnh này trông như ảnh đen trắng. Kiểm tra lại bạn có để nhầm ô không.', 'warn');
+    if (forced === 'bw' && items[0].cf > 14) toast('Ảnh này có nhiều màu. Kiểm tra lại bạn có để nhầm ô không.', 'warn');
+  } else if (items.length === 2) {
+    if (items[0].cf < items[1].cf) items.reverse();
+    // items[0] = màu hơn
+    items = [{ role: 'col', src: items[0] }, { role: 'bw', src: items[1] }];
+  } else {
+    items = [items[0]];
+  }
+  const assign = [];
+  if (forced) assign.push({ role: forced, src: items[0] });
+  else if (items[0].role) assign.push(...items);
+  else assign.push({ role: items[0].cf >= 9 ? 'col' : 'bw', src: items[0] });
+  if (S.sample) { S.col = null; S.bw = null; S.sample = false; }
+  for (const a of assign) { if (a.role === 'col') S.col = a.src; else S.bw = slim(a.src); }
+  renderZones();
+  if (S.col && S.bw) await processPair();
+  else { updateChips(); requestRender(); toast('Đã nạp ' + (assign[0].role === 'col' ? 'ảnh màu' : 'ảnh đen trắng') + '. Còn thiếu ' + (S.col ? 'ảnh đen trắng' : 'ảnh màu') + '.'); }
+}
+
+function renderZones() {
+  const set = (src, th, pl, meta, drop, list) => {
+    if (src) {
+      th.src = src.thumb; th.hidden = false; pl.style.display = 'none';
+      meta.textContent = src.w + '×' + src.h + (S.sample ? ' · mẫu' : '') + (B.pages.length ? ' · trang ' + (B.cur + 1) + '/' + B.pages.length : '');
+      drop.classList.add('has');
+    } else if (list && list.length) {
+      th.src = list[0].thumb; th.hidden = false; pl.style.display = 'none';
+      meta.textContent = list.length + ' ảnh · chờ nhóm còn lại'; drop.classList.add('has');
+    } else { th.hidden = true; th.removeAttribute('src'); pl.style.display = ''; meta.textContent = 'Bấm, kéo thả hoặc dán'; drop.classList.remove('has'); }
+  };
+  set(S.bw, $('thBw'), $('plBw'), $('metaBw'), $('dropBw'), B.lists.bw);
+  set(S.col, $('thCol'), $('plCol'), $('metaCol'), $('dropCol'), B.lists.col);
+  els.tag.hidden = !S.sample;
+}
+
+/* ------------------------------------------------------------ luồng xử lý chính */
+const K = () => Math.max(S.col.w, S.col.h) / 1800;
+const snapRange = () => clamp(Math.round(8 * K()), 4, 14);
+
+function makeCtx(col, bw, rect0, useWarp) {
+  const rect = useWarp === false ? Object.assign({}, rect0, { warp: null }) : rect0;
+  const al = GCV.renderAligned(bw.gray, bw.w, bw.h, rect, col.w, col.h);
+  return { W: col.w, H: col.h, rgba: col.rgba, gray: col.gray, bw: al, src: { gray: bw.gray, w: bw.w, h: bw.h }, rect };
+}
+function buildAligned() {
+  const ctx = makeCtx(S.col, S.bw, S.rect, S.useWarp);
+  S.bwAl = ctx.bw; S.ctx = ctx;
+  S.bwCanvas = null;
+  for (const r of S.regions) { r.patch = null; r.snapDirty = true; }
+}
+
+async function processPair() {
+  const gen = ++S.gen;
+  S.regions = []; S.sel = null; S.rect = null;
+  renderList(); renderZones(); updateAlignInfo();
+  const { col, bw } = S;
+  setBusy('Đang căn hai ảnh…', 0.04);
+  await nextFrame();
+  let rect;
+  try {
+    rect = await GCV.alignImages(col.gray, col.w, col.h, bw.gray, bw.w, bw.h, (p, m) => { if (gen === S.gen) setBusy(m || 'Đang căn hai ảnh…', p * 0.6); });
+  } catch (e) { console.error(e); setBusy(null); toast('Không căn được hai ảnh. Hãy thử ảnh khác.', 'warn'); return; }
+  if (gen !== S.gen) return;
+  S.rect = rect; S.rect0 = Object.assign({}, rect);
+  buildAligned();
+  updateAlignInfo();
+  fitZoom();
+  requestRender();
+  await runDetect(gen, true);
+  if (gen !== S.gen) return;
+  setBusy(null);
+  const ntint = S.regions.filter((r) => r.kind === 'tint').length;
+  if (!S.sample) toast(S.regions.length ? 'Đã tìm thấy ' + S.regions.length + ' khung' + (ntint ? ' (gồm ' + ntint + ' ô nền màu)' : '') + ' và thay chữ Việt.' : 'Chưa tìm thấy khung nào. Hãy chọn thủ công trên thanh công cụ.', S.regions.length ? undefined : 'warn');
+}
+
+async function runDetect(gen, quiet) {
+  if (!S.ctx) return;
+  setBusy('Đang tìm khung thoại…', 0.62);
+  const det = await GCV.detectRegions(S.ctx, { tol: S.tol, tinted: S.tinted }, (p) => { if (gen === S.gen) setBusy('Đang tìm khung thoại…', 0.62 + 0.38 * p); });
+  if (gen !== S.gen) return;
+  // giữ lại các khung vẽ tay; thay các khung tự tìm
+  const manual = S.regions.filter((r) => !r.auto);
+  const found = det.regions.filter((r) => !manual.some((m) => regionHas(m, r.seed[0], r.seed[1])));
+  for (const r of found) { r.auto = true; r.enabled = true; r.id = S.nextId++; r.snapDirty = true; r.patch = null; }
+  S.regions = manual.concat(found);
+  S.sel = null;
+  renderList();
+  requestRender();
+  const nt = found.filter((r) => r.kind === 'tint').length;
+  if (!quiet) toast(found.length ? 'Tìm thấy ' + found.length + ' khung' + (nt ? ', gồm ' + nt + ' ô nền màu' : ' thoại') + '.' : 'Không tìm thấy khung nào. Thử tăng độ nhạy hoặc chọn thủ công.', found.length ? undefined : 'warn');
+}
+
+function regionHas(r, x, y) {
+  const lx = x - r.x, ly = y - r.y;
+  return lx >= 0 && ly >= 0 && lx < r.w && ly < r.h && r.mask[ly * r.w + lx] === 1;
+}
+function regionAt(x, y) {
+  for (let i = S.regions.length - 1; i >= 0; i--) if (regionHas(S.regions[i], x | 0, y | 0)) return S.regions[i];
+  return null;
+}
+const snapRangeFor = (ctx) => clamp(Math.round(8 * Math.max(ctx.W, ctx.H) / 1800), 4, 14);
+function ensureSnap(r, ctx) {
+  if (!r.snapDirty) return;
+  const s = GCV.snapRegion(r, ctx, snapRangeFor(ctx));
+  r.autoX = s.dx; r.autoY = s.dy; r.autoEX = s.ex || 0; r.autoEY = s.ey || 0; r.snapDirty = false;
+}
+function patchFor(r, ctx) {
+  if (!r.patch) { ensureSnap(r, ctx); r.patch = GCV.buildPatch(r, ctx); }
+  return r.patch;
+}
+const getPatch = (r) => patchFor(r, S.ctx);
+const tmpC = document.createElement('canvas');
+function drawPatch(g, p) {
+  tmpC.width = p.w; tmpC.height = p.h;
+  tmpC.getContext('2d').putImageData(new ImageData(p.data, p.w, p.h), 0, 0);
+  g.drawImage(tmpC, p.x, p.y);
+}
+function composeTo(g, colCanvas, ctx, regions, layerOnly) {
+  if (!layerOnly) g.drawImage(colCanvas, 0, 0);
+  for (const r of regions) if (r.enabled) drawPatch(g, patchFor(r, ctx));
+}
+const compose = (g, layerOnly) => composeTo(g, S.col.canvas, S.ctx, S.regions, layerOnly);
+
+/* ------------------------------------------------------------ vẽ khung xem */
+function getBwCanvas() {
+  if (S.bwCanvas) return S.bwCanvas;
+  const { W, H } = S.ctx;
+  const c = mk(W, H), g = c.getContext('2d');
+  const id = g.createImageData(W, H), d = id.data, a = S.bwAl;
+  for (let i = 0, j = 0; i < a.length; i++, j += 4) { d[j] = d[j + 1] = d[j + 2] = a[i]; d[j + 3] = 255; }
+  g.putImageData(id, 0, 0);
+  return (S.bwCanvas = c);
+}
+let rq = 0;
+function requestRender() { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; renderView(); }); }
+function renderView() {
+  const cv = els.view;
+  if (!S.col) {
+    const g0 = cv.getContext('2d'); g0.clearRect(0, 0, cv.width, cv.height); drawOverlay(); return;
+  }
+  const W = S.col.w, H = S.col.h;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; applyZoom(); }
+  const g = cv.getContext('2d');
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  if (S.view === 'color' || !S.ctx) g.drawImage(S.col.canvas, 0, 0);
+  else if (S.view === 'result') compose(g, false);
+  else if (S.view === 'bw') g.drawImage(getBwCanvas(), 0, 0);
+  else {
+    g.drawImage(S.col.canvas, 0, 0);
+    g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.6;
+    g.drawImage(getBwCanvas(), 0, 0);
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  }
+  updateChips();
+  drawOverlay();
+}
+function applyZoom() {
+  if (!S.col) return;
+  const w = Math.round(S.col.w * S.zoom), h = Math.round(S.col.h * S.zoom);
+  els.sheet.style.width = w + 'px'; els.sheet.style.height = h + 'px';
+  els.sheet.classList.toggle('crisp', S.zoom >= 3);
+  $('zFit').textContent = Math.round(S.zoom * 100) + '%';
+  drawOverlay();
+}
+function fitZoom() {
+  if (!S.col) return;
+  const sc = els.scroller;
+  const z = Math.min((sc.clientWidth - 44) / S.col.w, (sc.clientHeight - 44) / S.col.h);
+  S.zoom = clamp(isFinite(z) && z > 0 ? z : 0.3, 0.05, 2);
+  S.fit = true;
+  applyZoom();
+  sc.scrollLeft = 0; sc.scrollTop = 0;
+}
+function zoomAt(z, cx, cy) {
+  if (!S.col) return;
+  z = clamp(z, 0.05, 8);
+  const r0 = els.sheet.getBoundingClientRect();
+  const ix = (cx - r0.left) / S.zoom, iy = (cy - r0.top) / S.zoom;
+  S.zoom = z; S.fit = false; applyZoom();
+  const r1 = els.sheet.getBoundingClientRect();
+  els.scroller.scrollLeft += r1.left + ix * z - cx;
+  els.scroller.scrollTop += r1.top + iy * z - cy;
+  drawOverlay();
+}
+function zoomCenter(f) {
+  const r = els.scroller.getBoundingClientRect();
+  zoomAt(S.zoom * f, r.left + els.scroller.clientWidth / 2, r.top + els.scroller.clientHeight / 2);
+}
+
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function hexRgb(h) {
+  h = h.replace('#', '');
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  return [parseInt(h.slice(0, 2), 16) || 0, parseInt(h.slice(2, 4), 16) || 0, parseInt(h.slice(4, 6), 16) || 0];
+}
+function tintFor(r, color) {
+  r._t = r._t || {};
+  if (!r._t[color]) {
+    const c = mk(r.w, r.h), g = c.getContext('2d');
+    const id = g.createImageData(r.w, r.h), d = id.data, rgb = hexRgb(color);
+    for (let i = 0; i < r.mask.length; i++) if (r.mask[i]) { const j = i << 2; d[j] = rgb[0]; d[j + 1] = rgb[1]; d[j + 2] = rgb[2]; d[j + 3] = 44; }
+    g.putImageData(id, 0, 0);
+    r._t[color] = c;
+  }
+  return r._t[color];
+}
+function drawOverlay() {
+  const sc = els.scroller, oc = els.over;
+  const cw = sc.clientWidth, ch = sc.clientHeight, dpr = window.devicePixelRatio || 1;
+  if (oc.width !== Math.round(cw * dpr) || oc.height !== Math.round(ch * dpr)) {
+    oc.width = Math.round(cw * dpr); oc.height = Math.round(ch * dpr);
+    oc.style.width = cw + 'px'; oc.style.height = ch + 'px';
+  }
+  const g = oc.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, cw, ch);
+  if (!S.col) return;
+  const sr = els.sheet.getBoundingClientRect(), cr = sc.getBoundingClientRect();
+  const ox = sr.left - cr.left, oy = sr.top - cr.top, z = S.zoom;
+  const cAcc = cssVar('--accent'), cMark = cssVar('--mark'), cOff = cssVar('--ink-3');
+  g.font = '500 11px "JetBrains Mono", ui-monospace, monospace';
+  g.textBaseline = 'middle';
+  S.regions.forEach((r, i) => {
+    const sel = r.id === S.sel;
+    if (!S.showOverlay && !sel) return;
+    const col = sel ? cMark : (r.enabled ? cAcc : cOff);
+    const x = ox + r.x * z, y = oy + r.y * z, w = r.w * z, h = r.h * z;
+    if (x > cw || y > ch || x + w < 0 || y + h < 0) return;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(tintFor(r, col), x, y, w, h);
+    g.lineWidth = sel ? 2 : 1.25;
+    g.strokeStyle = col;
+    g.setLineDash(r.enabled ? [] : [5, 4]);
+    g.strokeRect(x + 0.5, y + 0.5, Math.max(1, w - 1), Math.max(1, h - 1));
+    g.setLineDash([]);
+    const label = String(i + 1), tw = g.measureText(label).width + 10;
+    const ly = y - 17 < 2 ? y + 2 : y - 17;
+    g.fillStyle = col;
+    g.beginPath(); g.roundRect ? g.roundRect(x, ly, tw, 15, 4) : g.rect(x, ly, tw, 15); g.fill();
+    g.fillStyle = '#fff';
+    g.fillText(label, x + 5, ly + 8);
+  });
+  const d = S.drag;
+  if (d && d.type === 'rect') {
+    const x0 = ox + Math.min(d.x0, d.x1) * z, y0 = oy + Math.min(d.y0, d.y1) * z, w = Math.abs(d.x1 - d.x0) * z, h = Math.abs(d.y1 - d.y0) * z;
+    g.fillStyle = cMark + '33'; g.fillRect(x0, y0, w, h);
+    g.strokeStyle = cMark; g.lineWidth = 1.5; g.setLineDash([6, 4]); g.strokeRect(x0 + 0.5, y0 + 0.5, w, h); g.setLineDash([]);
+  } else if (d && d.type === 'lasso' && d.pts.length > 1) {
+    g.beginPath();
+    d.pts.forEach((p, i) => (i ? g.lineTo(ox + p[0] * z, oy + p[1] * z) : g.moveTo(ox + p[0] * z, oy + p[1] * z)));
+    g.closePath();
+    g.fillStyle = cMark + '33'; g.fill();
+    g.strokeStyle = cMark; g.lineWidth = 1.5; g.stroke();
+  }
+}
+
+/* ------------------------------------------------------------ danh sách khung */
+function kindOf(r) { return KIND[r.kind] || 'Khung'; }
+function renderList() {
+  const ul = els.list;
+  ul.textContent = '';
+  if (!S.regions.length) {
+    const li = document.createElement('li');
+    li.className = 'reg-empty';
+    li.textContent = S.col ? 'Chưa có khung nào. Bấm “Tự tìm khung thoại” hoặc chọn thủ công trên thanh công cụ.' : 'Nạp ảnh ở bước 1 để bắt đầu.';
+    ul.appendChild(li);
+  }
+  S.regions.forEach((r, i) => {
+    const li = document.createElement('li');
+    li.className = 'reg' + (r.id === S.sel ? ' sel' : '') + (r.enabled ? '' : ' off');
+    li.dataset.id = r.id;
+    li.innerHTML = '<input type="checkbox" class="rchk" ' + (r.enabled ? 'checked' : '') + ' aria-label="Áp dụng khung ' + (i + 1) + '">' +
+      '<button type="button" class="rmain"><span class="rn">' + (i + 1) + '</span><span class="rt">' + kindOf(r) + '</span><span class="rs">' + r.w + '×' + r.h + '</span></button>' +
+      '<button type="button" class="rdel" aria-label="Xoá khung ' + (i + 1) + '">×</button>';
+    ul.appendChild(li);
+  });
+  renderInspector();
+  updateChips();
+  if (B.pages.length && B.cur >= 0) refreshPageItem(B.cur);
+}
+function selected() { return S.regions.find((r) => r.id === S.sel) || null; }
+function select(id) {
+  S.sel = id;
+  renderList();
+  drawOverlay();
+  const li = els.list.querySelector('.reg.sel');
+  if (li && li.scrollIntoView) li.scrollIntoView({ block: 'nearest' });
+}
+function addRegion(reg, kind) {
+  reg.kind = kind; reg.id = S.nextId++; reg.enabled = true; reg.auto = false; reg.snapDirty = true; reg.patch = null;
+  reg.opt = reg.opt || {};
+  S.regions.push(reg);
+  select(reg.id);
+  requestRender();
+}
+function removeRegion(id) {
+  S.regions = S.regions.filter((r) => r.id !== id);
+  if (S.sel === id) S.sel = null;
+  renderList(); requestRender();
+}
+function modeShare(r) {
+  const { W, rgba } = S.ctx;
+  const bins = new Uint32Array(4096);
+  let n = 0;
+  const step = Math.max(1, Math.floor(Math.sqrt((r.w * r.h) / 6000)));
+  for (let y = 0; y < r.h; y += step) for (let x = 0; x < r.w; x += step) {
+    if (!r.mask[y * r.w + x]) continue;
+    const j = ((r.y + y) * W + r.x + x) << 2;
+    bins[((rgba[j] >> 4) << 8) | ((rgba[j + 1] >> 4) << 4) | (rgba[j + 2] >> 4)]++; n++;
+  }
+  let m = 0; for (let i = 0; i < 4096; i++) if (bins[i] > m) m = bins[i];
+  return n ? m / n : 0;
+}
+function addManual(reg, kind) {
+  if (!reg) { toast('Vùng chọn quá nhỏ. Hãy chọn lớn hơn một chút.', 'warn'); return; }
+  reg.opt = {};
+  if (modeShare(reg) < 0.5) reg.opt.fill = 'inpaint';
+  addRegion(reg, kind);
+  toast(reg.opt.fill === 'inpaint' ? 'Đã thêm vùng trên tranh. Chữ gốc được xoá bằng nội suy nền.' : 'Đã thêm khung ' + S.regions.length + '.');
+}
+function addBubbleAt(ix, iy) {
+  const r = GCV.floodRegionAt(S.ctx, Math.round(ix), Math.round(iy), S.tol);
+  if (!r.region) {
+    toast(r.reason === 'big' ? 'Vùng này quá lớn, có thể viền khung bị hở. Hãy dùng Ô chữ nhật hoặc Vẽ tay.' : 'Không thấy khung ở đây. Hãy bấm vào phần nền bên trong khung.', 'warn');
+    return;
+  }
+  const dup = S.regions.find((q) => regionHas(q, r.region.seed[0], r.region.seed[1]));
+  if (dup) { select(dup.id); toast('Khung này đã có trong danh sách.'); return; }
+  r.region.opt = {};
+  addRegion(r.region, 'bubble');
+  toast('Đã thêm khung ' + S.regions.length + '.');
+}
+
+/* ------------------------------------------------------------ bảng chỉnh khung */
+function renderInspector() {
+  const r = selected();
+  els.insp.hidden = !r;
+  if (!r) return;
+  const o = Object.assign(GCV.defaultOpt(S.ctx), r.opt);
+  $('inspTitle').textContent = 'Khung ' + (S.regions.indexOf(r) + 1) + ' · ' + kindOf(r);
+  $('inEnable').checked = r.enabled;
+  $$('#inFill button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === o.fill)));
+  $('inSens').value = o.sens; $('inSensO').textContent = o.sens;
+  $('inGrow').value = o.grow; $('inGrowO').textContent = o.grow;
+  $('rowGrow').hidden = o.fill === 'flat';
+  $('inDx').value = -(o.shiftX || 0); $('inDy').value = -(o.shiftY || 0);
+  $('inAutoColor').checked = !o.textColor;
+  $('inColor').disabled = !!(!o.textColor);
+  if (o.textColor) $('inColor').value = '#' + o.textColor.map((v) => v.toString(16).padStart(2, '0')).join('');
+  $('inInvert').value = o.invert === 'auto' ? 'auto' : (o.invert ? 'on' : 'off');
+}
+function patchOpt(change) {
+  const r = selected();
+  if (!r) return;
+  Object.assign(r.opt, change);
+  r.patch = null;
+  requestRender();
+}
+
+/* ------------------------------------------------------------ căn ảnh thủ công */
+let realignT = 0;
+function scheduleRealign() {
+  updateAlignInfo();
+  clearTimeout(realignT);
+  realignT = setTimeout(() => { if (!S.col || !S.bw || !S.rect) return; buildAligned(); requestRender(); }, 140);
+}
+function updateAlignInfo() {
+  const info = $('alignInfo'), chip = $('chip2');
+  if (!S.rect || !S.bw) { info.textContent = 'Chưa căn.'; chip.textContent = S.col || S.bw ? 'Chờ đủ hai ảnh' : 'Chờ ảnh'; chip.className = 'chip'; $('step2').classList.remove('done'); return; }
+  const r = S.rect;
+  info.textContent = 'Vị trí  X ' + fmt1(r.ox) + ' · Y ' + fmt1(r.oy) + ' px\nTỉ lệ    ×' + fmt2(r.rw / S.bw.w) + (Math.abs(r.rw / r.rh - S.bw.w / S.bw.h) > 0.004 ? ' (hơi méo)' : '');
+  if (r.info) info.textContent += S.useWarp === false ? '\nBù cục bộ  tắt' : r.warp ? '\nBù xoay/méo  TB ' + fmt1(r.info.mean) + ' · tối đa ' + fmt1(r.info.max) + ' px' : '\nBù xoay/méo  không cần';
+  info.style.whiteSpace = 'pre-line';
+  const sc = r.score;
+  if (sc >= 0.5) { chip.textContent = 'Khớp tốt · ' + Math.round(sc * 100) + '%'; chip.className = 'chip ok'; }
+  else if (sc >= 0.3) { chip.textContent = 'Tạm được · ' + Math.round(sc * 100) + '%'; chip.className = 'chip warn'; }
+  else { chip.textContent = 'Chưa khớp · chỉnh tay'; chip.className = 'chip bad'; }
+  $('step2').classList.add('done');
+}
+function updateChips() {
+  const c1 = $('chip1');
+  const n = (S.col ? 1 : 0) + (S.bw ? 1 : 0), bn = B.pages.length, pend = !bn && !n && (B.lists.bw.length || B.lists.col.length);
+  c1.textContent = bn ? 'Đã nạp ' + bn + ' trang' : pend ? 'Còn thiếu ảnh ' + (B.lists.bw.length ? 'màu' : 'đen trắng') : n === 2 ? (S.sample ? 'Ảnh mẫu' : 'Đã nạp 2 ảnh') : n === 1 ? 'Còn thiếu 1 ảnh' : 'Chưa có ảnh';
+  c1.className = 'chip' + (bn || n === 2 ? ' ok' : n === 1 || pend ? ' warn' : '');
+  $('step1').classList.toggle('done', n === 2 || bn > 0);
+  const c3 = $('chip3'), on = S.regions.filter((r) => r.enabled).length;
+  c3.textContent = S.regions.length ? on + '/' + S.regions.length + ' khung đang áp dụng' : 'Chưa có khung';
+  c3.className = 'chip' + (on ? ' ok' : '');
+  $('step3').classList.toggle('done', on > 0);
+  const c4 = $('chip4');
+  c4.textContent = on ? 'Sẵn sàng' : 'Chưa sẵn sàng'; c4.className = 'chip' + (on ? ' ok' : '');
+  $('btnSave').disabled = !S.ctx; $('btnSaveLayer').disabled = !on;
+  $('btnDetect').disabled = !S.ctx; $('btnAlign').disabled = !(S.col && S.bw); $('btnAlignReset').disabled = !S.rect0;
+}
+
+/* ------------------------------------------------------------ xuất ảnh */
+let dlPromise = null;
+function getDownloads() {
+  if (!dlPromise) dlPromise = window.claude && typeof window.claude.use === 'function' ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+  return dlPromise;
+}
+let fbUrl = '';
+function showFallback(blob, name) {
+  if (fbUrl) URL.revokeObjectURL(fbUrl);
+  fbUrl = URL.createObjectURL(blob);
+  const zip = /\.zip$/i.test(name);
+  $('fbImg').hidden = zip; $('fbLink').hidden = !zip;
+  if (zip) {
+    $('fbLink').href = fbUrl; $('fbLink').download = name; $('fbLink').textContent = 'Tải ' + name;
+    $('fbMsg').textContent = 'Chưa lưu trực tiếp được tệp ZIP ở đây. Thử bấm nút bên dưới; nếu vẫn không tải được, hãy tải từng trang bằng nút “Tải ảnh đã ghép”.';
+  } else {
+    $('fbImg').src = fbUrl;
+    $('fbMsg').textContent = 'Chưa tải trực tiếp được tệp “' + name + '”. Bấm giữ hoặc bấm chuột phải vào ảnh bên dưới rồi chọn lưu ảnh.';
+  }
+  $('fallback').hidden = false;
+  $('fallback').scrollIntoView({ block: 'nearest' });
+}
+async function saveBlob(blob, name) {
+  const dl = await getDownloads();
+  if (dl) {
+    try {
+      await dl.save({ filename: name, data: blob });
+      $('fallback').hidden = true;
+      toast('Đã gửi tệp ' + name + ' để lưu.');
+      return;
+    } catch (e) {
+      const code = e && e.code;
+      if (code === 'declined') { toast('Bạn đã huỷ lưu tệp.'); return; }
+      if (code === 'rate_limited') { toast('Đang có hộp thoại lưu khác. Thử lại sau giây lát.', 'warn'); return; }
+      if (code === 'extension_not_enabled' || code === 'rejected_extension') { toast('Nơi này không cho lưu tệp ' + (name.split('.').pop() || '').toUpperCase() + '. Hãy tải từng trang bằng nút “Tải ảnh đã ghép”.', 'warn'); return; }
+      if (code === 'too_large') { toast('Tệp quá lớn để lưu một lần. Thử chọn JPG hoặc tải từng trang.', 'warn'); return; }
+    }
+  }
+  showFallback(blob, name);
+}
+async function exportImage(layerOnly) {
+  if (!S.ctx || S.busy) return;
+  setBusy(layerOnly ? 'Đang tạo lớp chữ…' : 'Đang tạo ảnh kết quả…', 0.5);
+  await nextFrame();
+  const c = mk(S.col.w, S.col.h);
+  compose(c.getContext('2d'), layerOnly);
+  const jpg = !layerOnly && S.fmt === 'jpg';
+  const blob = await new Promise((res) => c.toBlob(res, jpg ? 'image/jpeg' : 'image/png', S.quality / 100));
+  setBusy(null);
+  if (!blob) { toast('Không tạo được tệp ảnh. Ảnh có thể quá lớn cho trình duyệt.', 'warn'); return; }
+  const base = (S.col.name || 'anh').replace(/\.[^.]+$/, '');
+  await saveBlob(blob, base + (layerOnly ? '_lop-chu.png' : '_vi.' + (jpg ? 'jpg' : 'png')));
+}
+
+/* ------------------------------------------------------------ nhiều trang (cả chương) */
+const collator = new Intl.Collator('vi', { numeric: true, sensitivity: 'base' });
+const baseName = (n) => String(n || '').replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '');
+// số trang = cụm chữ số cuối cùng trong tên tệp
+function numKey(name) { const m = baseName(name).match(/(\d+)(?!.*\d)/); return m ? parseInt(m[1], 10) : null; }
+
+// Đọc nhanh một bản thu nhỏ để phân loại màu / đen trắng và làm hình đại diện.
+async function smallProbe(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { resizeWidth: 220, resizeQuality: 'medium' }); } catch (e) { bmp = await createImageBitmap(file); }
+  const k = Math.min(1, 220 / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
+  const c = mk(w, h), g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(bmp, 0, 0, w, h);
+  if (bmp.close) bmp.close();
+  const id = g.getImageData(0, 0, w, h);
+  return { cf: GCV.colorfulness(id.data, w, h), thumb: c.toDataURL('image/jpeg', 0.72) };
+}
+
+// Chia thành nhóm màu / đen trắng theo khoảng trống lớn nhất của độ rực màu (thang log).
+function splitByColor(items) {
+  if (items.length < 2) return null;
+  const srt = items.map((it) => it.cf).sort((a, b) => a - b);
+  let bi = -1, bg = 0;
+  for (let i = 0; i < srt.length - 1; i++) { const g = Math.log(srt[i + 1] + 1) - Math.log(srt[i] + 1); if (g > bg) { bg = g; bi = i; } }
+  let thr = bi >= 0 && bg > 0.25 ? (srt[bi] + srt[bi + 1]) / 2 : 6;
+  let bw = items.filter((it) => it.cf <= thr), col = items.filter((it) => it.cf > thr);
+  if (!bw.length || !col.length || Math.min(bw.length, col.length) < 0.6 * Math.max(bw.length, col.length)) {
+    // nhóm lệch nhau quá: thử ngưỡng cố định
+    thr = 6;
+    const bw2 = items.filter((it) => it.cf <= thr), col2 = items.filter((it) => it.cf > thr);
+    if (bw2.length && col2.length) { bw = bw2; col = col2; }
+  }
+  if (!bw.length || !col.length) return null;
+  return { bw, col };
+}
+
+// Ghép cặp: theo số trang trong tên tệp nếu khớp được, không thì theo thứ tự tên.
+function pairLists(bw, col) {
+  const bwK = bw.map((x) => numKey(x.name)), colK = col.map((x) => numKey(x.name));
+  const uniq = (ks) => ks.every((k) => k != null) && new Set(ks).size === ks.length;
+  let pairs = null, lone = { bw: [], col: [] };
+  if (uniq(bwK) && uniq(colK)) {
+    const m = new Map(col.map((c, i) => [colK[i], c]));
+    const sorted = bw.map((b, i) => ({ b, k: bwK[i] })).sort((a, b) => a.k - b.k);
+    pairs = [];
+    for (const { b, k } of sorted) { const c = m.get(k); if (c) { pairs.push({ bw: b, col: c }); m.delete(k); } else lone.bw.push(b); }
+    lone.col = Array.from(m.values());
+    if (pairs.length < 0.6 * Math.min(bw.length, col.length)) pairs = null;
+  }
+  if (!pairs) {
+    const sb = bw.slice().sort((a, b) => collator.compare(a.name, b.name)), sc = col.slice().sort((a, b) => collator.compare(a.name, b.name));
+    const n = Math.min(sb.length, sc.length);
+    pairs = [];
+    for (let i = 0; i < n; i++) pairs.push({ bw: sb[i], col: sc[i] });
+    lone = { bw: sb.slice(n), col: sc.slice(n) };
+  }
+  return { pairs, lone };
+}
+
+function leaveBatch() {
+  B.pages = []; B.cur = -1; B.lists = { bw: [], col: [] };
+  renderPages();
+}
+
+async function acceptBatch(files, forced) {
+  setBusy('Đang đọc ' + files.length + ' ảnh…', 0.03);
+  const items = [];
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const pr = await smallProbe(files[i]);
+      items.push({ file: files[i], name: files[i].name || ('anh-' + (i + 1)), cf: pr.cf, thumb: pr.thumb });
+      setBusy('Đang đọc ảnh ' + (i + 1) + '/' + files.length + '…', 0.03 + 0.97 * (i + 1) / files.length);
+      if (i % 3 === 2) await yieldUI();
+    }
+  } catch (e) {
+    console.error(e);
+    setBusy(null);
+    toast('Không đọc được một trong các ảnh. Thử lưu lại thành PNG hoặc JPG.', 'warn');
+    return;
+  }
+  setBusy(null);
+  let bw = B.lists.bw, col = B.lists.col;
+  if (forced === 'bw') bw = items;
+  else if (forced === 'col') col = items;
+  else {
+    const sp = splitByColor(items);
+    if (!sp) { toast('Không phân biệt được ảnh màu và ảnh đen trắng. Hãy thả riêng từng nhóm vào ô tương ứng.', 'warn'); return; }
+    bw = sp.bw; col = sp.col;
+  }
+  B.lists = { bw, col };
+  if (!bw.length || !col.length) {
+    S.sample = false; S.col = null; S.bw = null; S.rect = null; S.ctx = null; S.regions = []; S.sel = null; S.gen++;
+    if (B.pages.length) { B.pages = []; B.cur = -1; renderPages(); }
+    renderZones(); renderList(); updateAlignInfo(); updateChips(); requestRender();
+    toast('Đã nạp ' + (bw.length || col.length) + ' ảnh ' + (bw.length ? 'đen trắng' : 'màu') + '. Còn thiếu ảnh ' + (bw.length ? 'màu' : 'đen trắng') + '.');
+    return;
+  }
+  const { pairs, lone } = pairLists(bw, col);
+  if (!pairs.length) { toast('Không ghép được cặp nào. Kiểm tra lại tên tệp.', 'warn'); return; }
+  S.sample = false; S.col = null; S.bw = null; S.rect = null; S.ctx = null; S.regions = []; S.sel = null;
+  B.pages = pairs.map((p, i) => ({ id: i + 1, name: p.col.name, bwName: p.bw.name, colFile: p.col.file, bwFile: p.bw.file, thumb: p.col.thumb, status: 'new', state: null, n: 0, err: '' }));
+  B.cur = -1;
+  renderPages();
+  const nl = lone.bw.length + lone.col.length;
+  toast('Đã ghép ' + pairs.length + ' trang' + (nl ? ' · bỏ qua ' + nl + ' ảnh lẻ không có cặp' : '') + '.', nl ? 'warn' : undefined);
+  await gotoPage(0, true);
+}
+
+const pageCount = (pg, i) => (i === B.cur && S.rect ? S.regions.filter((r) => r.enabled).length : pg.n);
+function pageClass(pg, i) {
+  const st = pg.status === 'work' ? ' work' : pg.status === 'err' ? ' err' : pg.status === 'ready' ? (pageCount(pg, i) ? ' ready' : ' warn') : '';
+  return 'pg-item' + (i === B.cur ? ' cur' : '') + st;
+}
+function pageTip(pg, i) {
+  const st = pg.status === 'work' ? 'đang xử lý' : pg.status === 'err' ? 'lỗi' + (pg.err ? ': ' + pg.err : '') : pg.status === 'ready' ? pageCount(pg, i) + ' khung' : 'chưa xử lý';
+  return 'Trang ' + (i + 1) + ' · ' + pg.name + ' · ' + st;
+}
+function refreshPageItem(i) {
+  const el = $('pgStrip').children[i], pg = B.pages[i];
+  if (el && pg) { el.className = pageClass(pg, i); el.title = pageTip(pg, i); }
+  updatePagesHead();
+}
+function updatePagesHead() {
+  const n = B.pages.length;
+  if (!n) return;
+  const cur = Math.max(0, B.cur);
+  $('pgTitle').textContent = 'Trang ' + (cur + 1) + '/' + n;
+  $('pgPrev').disabled = S.busy || cur <= 0; $('pgNext').disabled = S.busy || cur >= n - 1;
+  const ready = B.pages.filter((p, i) => p.status === 'ready' || (i === B.cur && S.rect)).length, err = B.pages.filter((p) => p.status === 'err').length;
+  const pend = B.pages.filter((p, i) => !p.state && p.status !== 'err' && !(i === B.cur && S.rect)).length;
+  $('pgSum').textContent = ready + '/' + n + ' trang đã xử lý' + (err ? ' · ' + err + ' lỗi' : '');
+  $('pgProc').textContent = pend ? 'Xử lý ' + pend + ' trang còn lại' : 'Đã xử lý hết';
+  $('pgProc').disabled = S.busy || !pend;
+  $('pgZip').disabled = S.busy;
+}
+function renderPages() {
+  const bar = $('pagesBar'), strip = $('pgStrip');
+  bar.hidden = !B.pages.length;
+  strip.textContent = '';
+  B.pages.forEach((pg, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = pageClass(pg, i); b.dataset.i = String(i); b.title = pageTip(pg, i);
+    b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(i === B.cur));
+    const im = document.createElement('img'); im.alt = ''; im.src = pg.thumb;
+    const d = document.createElement('span'); d.className = 'd';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = String(i + 1);
+    b.append(im, d, n);
+    strip.appendChild(b);
+  });
+  updatePagesHead();
+  const cur = strip.children[B.cur];
+  if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+  updateChips();
+}
+
+// Lưu trạng thái trang đang mở (căn ảnh + các khung) để quay lại sau.
+function savePage() {
+  const pg = B.pages[B.cur];
+  if (!pg || !S.rect) return;
+  for (const r of S.regions) { r.patch = null; r._t = null; }
+  pg.state = { rect: S.rect, rect0: S.rect0, regions: S.regions, nextId: S.nextId };
+  pg.n = S.regions.filter((r) => r.enabled).length;
+  pg.status = 'ready';
+}
+
+async function gotoPage(i, first) {
+  if (S.busy || i < 0 || i >= B.pages.length) return;
+  if (i === B.cur && !first) return;
+  if (B.cur >= 0 && !first) savePage();
+  B.cur = i;
+  const pg = B.pages[i];
+  renderPages();
+  setBusy('Đang mở trang ' + (i + 1) + '…', 0.05);
+  await nextFrame();
+  let col, bw;
+  try { col = await decodeFile(pg.colFile); bw = slim(await decodeFile(pg.bwFile)); } catch (e) {
+    console.error(e);
+    setBusy(null); pg.status = 'err'; pg.err = 'không đọc được ảnh';
+    S.col = null; S.bw = null; S.rect = null; S.ctx = null; S.regions = []; S.sel = null; S.gen++;
+    renderZones(); renderList(); updateAlignInfo(); renderPages(); requestRender();
+    toast('Không đọc được ảnh của trang ' + (i + 1) + '.', 'warn');
+    return;
+  }
+  S.sample = false; S.col = col; S.bw = bw;
+  renderZones();
+  if (pg.state) {
+    const st = pg.state;
+    S.gen++;
+    S.rect = st.rect; S.rect0 = st.rect0; S.regions = st.regions; S.nextId = st.nextId; S.sel = null;
+    buildAligned(); updateAlignInfo(); renderList(); fitZoom(); requestRender();
+    setBusy(null);
+  } else {
+    await processPair();
+    pg.status = S.rect ? 'ready' : 'err';
+    if (!S.rect) pg.err = 'không căn được';
+    pg.n = S.regions.filter((r) => r.enabled).length;
+  }
+  renderPages();
+}
+
+// Xử lý một trang không cần mở ra giao diện (dùng cho "xử lý hàng loạt" và xuất ZIP).
+async function processPageData(pg, onProg) {
+  const col = await decodeFile(pg.colFile), bw = slim(await decodeFile(pg.bwFile));
+  const rect = await GCV.alignImages(col.gray, col.w, col.h, bw.gray, bw.w, bw.h, (p, m) => { if (onProg) onProg(p * 0.6, m); });
+  const ctx = makeCtx(col, bw, rect, S.useWarp);
+  const det = await GCV.detectRegions(ctx, { tol: S.tol, tinted: S.tinted }, (p) => { if (onProg) onProg(0.6 + 0.4 * p, 'Đang tìm khung thoại…'); });
+  let id = 1;
+  for (const r of det.regions) { r.auto = true; r.enabled = true; r.id = id++; r.snapDirty = true; r.patch = null; }
+  return { col, bw, ctx, state: { rect, rect0: Object.assign({}, rect), regions: det.regions, nextId: id } };
+}
+
+function pagesBusy(msg, p) { setBusy(msg, p); }
+
+async function processAll() {
+  if (S.busy || !B.pages.length) return;
+  if (B.cur >= 0) savePage();
+  const todo = [];
+  B.pages.forEach((p, i) => { if (!p.state && p.status !== 'err') todo.push(i); });
+  if (!todo.length) { toast('Các trang đều đã được xử lý.'); return; }
+  B.job = true; B.cancel = false;
+  let done = 0, failed = 0;
+  try {
+    for (const i of todo) {
+      if (B.cancel) break;
+      const pg = B.pages[i];
+      const head = 'Trang ' + (i + 1) + '/' + B.pages.length + ' · ';
+      pg.status = 'work';
+      pagesBusy(head + 'Đang đọc ảnh…', done / todo.length);
+      refreshPageItem(i);
+      await nextFrame();
+      try {
+        const r = await processPageData(pg, (p, m) => pagesBusy(head + (m || 'Đang xử lý…'), (done + p) / todo.length));
+        pg.state = r.state; pg.n = r.state.regions.length; pg.status = 'ready';
+      } catch (e) {
+        console.error(e); pg.status = 'err'; pg.err = 'không căn được'; failed++;
+      }
+      done++;
+      refreshPageItem(i);
+      await yieldUI();
+    }
+  } finally { B.job = false; setBusy(null); }
+  renderPages();
+  const stopped = B.cancel;
+  toast((stopped ? 'Đã dừng. ' : '') + 'Đã xử lý ' + (done - failed) + ' trang' + (failed ? ', ' + failed + ' trang lỗi' : '') + '. Bấm vào từng trang để kiểm tra.', failed ? 'warn' : undefined);
+}
+
+/* ---- tệp ZIP (không nén: PNG/JPG vốn đã nén) ---- */
+let crcTable = null;
+function crc32(u8) {
+  if (!crcTable) { crcTable = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; crcTable[n] = c >>> 0; } }
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = crcTable[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+async function makeZip(files) {
+  const enc = new TextEncoder(), parts = [], cds = [];
+  const d = new Date();
+  const dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF;
+  const dd = ((((d.getFullYear() - 1980) & 0x7F) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+  let off = 0;
+  for (const f of files) {
+    const nameB = enc.encode(f.name), data = new Uint8Array(await f.blob.arrayBuffer());
+    const crc = crc32(data), size = data.length;
+    const lh = new DataView(new ArrayBuffer(30 + nameB.length));
+    lh.setUint32(0, 0x04034B50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dt, true); lh.setUint16(12, dd, true); lh.setUint32(14, crc, true); lh.setUint32(18, size, true); lh.setUint32(22, size, true);
+    lh.setUint16(26, nameB.length, true); lh.setUint16(28, 0, true);
+    new Uint8Array(lh.buffer).set(nameB, 30);
+    parts.push(lh.buffer, new Blob([data]));
+    cds.push({ nameB, crc, size, off });
+    off += 30 + nameB.length + size;
+  }
+  const cdStart = off;
+  for (const c of cds) {
+    const ch = new DataView(new ArrayBuffer(46 + c.nameB.length));
+    ch.setUint32(0, 0x02014B50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, dt, true); ch.setUint16(14, dd, true); ch.setUint32(16, c.crc, true); ch.setUint32(20, c.size, true); ch.setUint32(24, c.size, true);
+    ch.setUint16(28, c.nameB.length, true); ch.setUint16(30, 0, true); ch.setUint16(32, 0, true); ch.setUint16(34, 0, true); ch.setUint16(36, 0, true);
+    ch.setUint32(38, 0, true); ch.setUint32(42, c.off, true);
+    new Uint8Array(ch.buffer).set(c.nameB, 46);
+    parts.push(ch.buffer);
+    off += 46 + c.nameB.length;
+  }
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054B50, true); end.setUint16(4, 0, true); end.setUint16(6, 0, true);
+  end.setUint16(8, cds.length, true); end.setUint16(10, cds.length, true);
+  end.setUint32(12, off - cdStart, true); end.setUint32(16, cdStart, true); end.setUint16(20, 0, true);
+  parts.push(end.buffer);
+  return new Blob(parts, { type: 'application/zip' });
+}
+
+const canvasBlob = (c, type, q) => new Promise((res) => c.toBlob(res, type, q));
+function uniqueName(set, base, ext) {
+  let n = base + ext, k = 2;
+  while (set.has(n.toLowerCase())) n = base + '_' + k++ + ext;
+  set.add(n.toLowerCase());
+  return n;
+}
+
+async function exportAll() {
+  if (S.busy || !B.pages.length) return;
+  if (B.cur >= 0) savePage();
+  B.job = true; B.cancel = false;
+  const jpg = S.fmt === 'jpg', ext = jpg ? '.jpg' : '.png', names = new Set(), files = [];
+  let failed = 0, empty = 0;
+  const total = B.pages.length;
+  try {
+    for (let i = 0; i < total; i++) {
+      if (B.cancel) break;
+      const pg = B.pages[i], head = 'Trang ' + (i + 1) + '/' + total + ' · ';
+      const prog = (p, m) => setBusy(head + (m || 'Đang ghép chữ…'), (i + p) / total);
+      prog(0.02, 'Đang đọc ảnh…');
+      try {
+        let col, bw, ctx, st = pg.state;
+        if (!st) {
+          const r = await processPageData(pg, (p, m) => prog(p * 0.7, m));
+          col = r.col; bw = r.bw; ctx = r.ctx; st = pg.state = r.state; pg.status = 'ready'; pg.n = st.regions.length;
+        } else {
+          col = await decodeFile(pg.colFile); bw = slim(await decodeFile(pg.bwFile));
+          ctx = makeCtx(col, bw, st.rect, S.useWarp);
+          for (const r of st.regions) { r.snapDirty = true; r.patch = null; }
+        }
+        prog(0.75, 'Đang ghép chữ Việt…');
+        const c = mk(col.w, col.h);
+        composeTo(c.getContext('2d'), col.canvas, ctx, st.regions, false);
+        prog(0.9, 'Đang tạo ảnh…');
+        const blob = await canvasBlob(c, jpg ? 'image/jpeg' : 'image/png', S.quality / 100);
+        for (const r of st.regions) { r.patch = null; r.snapDirty = true; }
+        if (!blob) throw new Error('toBlob');
+        if (!st.regions.some((r) => r.enabled)) empty++;
+        files.push({ name: uniqueName(names, baseName(pg.name) + '_vi', ext), blob });
+        refreshPageItem(i);
+      } catch (e) {
+        console.error(e); pg.status = 'err'; pg.err = 'không xuất được'; failed++;
+        refreshPageItem(i);
+      }
+      await yieldUI();
+    }
+    if (B.cancel) { toast('Đã dừng, chưa tạo tệp ZIP.'); return; }
+    if (!files.length) { toast('Không có trang nào xuất được.', 'warn'); return; }
+    setBusy('Đang đóng gói ZIP…', 0.97);
+    await yieldUI();
+    const zip = await makeZip(files);
+    setBusy(null);
+    B.job = false;
+    const note = (failed ? failed + ' trang lỗi bị bỏ qua. ' : '') + (empty ? empty + ' trang chưa có khung nào (giữ nguyên ảnh màu gốc). ' : '');
+    if (note) toast(note, 'warn');
+    await saveBlob(zip, 'ghep-chu-viet_' + files.length + '-trang.zip');
+  } finally { B.job = false; setBusy(null); renderPages(); if (S.col) { for (const r of S.regions) { r.patch = null; r.snapDirty = true; } requestRender(); } }
+}
+
+/* ------------------------------------------------------------ ảnh mẫu (vẽ bằng canvas) */
+const SC = {
+  bubbles: [
+    { k: 'e', c: [860, 290], r: [250, 170], tail: [600, 490], ja: ['おはよう！', '今日もいい天気！'], vi: ['Chào buổi sáng!', 'Hôm nay trời', 'đẹp quá nhỉ.'], js: 32, vs: 46 },
+    { k: 'e', c: [330, 1170], r: [170, 140], tail: [190, 1330], ja: ['まさか、', 'こんな所で', '会うなんて'], vi: ['Không ngờ lại', 'gặp cậu ở đây…'], js: 36, vs: 36 },
+    { k: 'r', box: [700, 1060, 1110, 1270], ja: ['待って！', '話を聞いて', 'くれ！'], vi: ['Khoan đã!', 'Hãy nghe tớ nói!'], js: 34, vs: 40 },
+    { k: 'e', c: [500, 1545], r: [380, 85], ja_h: ['…でも、本当に大丈夫なのかな？'], vi: ['…Nhưng liệu có thật sự ổn không nhỉ?'], js: 44, vs: 30 },
+  ],
+  narr: { box: [80, 830, 520, 1010], fill: '#FFF3B0', ja: ['その夜、', '町は静まり', '返っていた。'], vi: ['Đêm đó, thị trấn chìm', 'trong tĩnh lặng.'], js: 26, vs: 30 },
+};
+function drawScene(g, s, ox, oy, lang, o) {
+  g.save();
+  g.setTransform(s, 0, 0, s, ox, oy);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const BK = '#000';
+  const path = (pts) => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); g.closePath(); };
+  const poly = (pts, fill, lw) => { path(pts); if (fill) { g.fillStyle = fill; g.fill(); } if (lw) { g.lineWidth = lw; g.strokeStyle = BK; g.stroke(); } };
+  const ell = (cx, cy, rx, ry, fill, lw) => { g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 6.2832); if (fill) { g.fillStyle = fill; g.fill(); } if (lw) { g.lineWidth = lw; g.strokeStyle = BK; g.stroke(); } };
+  const box = (x0, y0, x1, y1, fill, lw) => { if (fill) { g.fillStyle = fill; g.fillRect(x0, y0, x1 - x0, y1 - y0); } if (lw) { g.lineWidth = lw; g.strokeStyle = BK; g.strokeRect(x0, y0, x1 - x0, y1 - y0); } };
+  const rr = (x0, y0, x1, y1, r, fill) => {
+    g.beginPath(); g.moveTo(x0 + r, y0); g.lineTo(x1 - r, y0); g.quadraticCurveTo(x1, y0, x1, y0 + r); g.lineTo(x1, y1 - r); g.quadraticCurveTo(x1, y1, x1 - r, y1);
+    g.lineTo(x0 + r, y1); g.quadraticCurveTo(x0, y1, x0, y1 - r); g.lineTo(x0, y0 + r); g.quadraticCurveTo(x0, y0, x0 + r, y0); g.closePath(); g.fillStyle = fill; g.fill();
+  };
+  const stroke = (pts, lw, col) => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); g.lineWidth = lw; g.strokeStyle = col || BK; g.stroke(); };
+  const vgrad = (x0, y0, x1, y1, c0, c1) => { const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, c0); gr.addColorStop(1, c1); g.fillStyle = gr; g.fillRect(x0, y0, x1 - x0, y1 - y0); };
+  if (o.shapes) {
+    vgrad(50, 50, 1150, 760, 'rgb(142,197,255)', 'rgb(222,236,255)');
+    poly([[50, 600], [260, 400], [420, 560], [640, 380], [900, 600], [1150, 470], [1150, 760], [50, 760]], 'rgb(108,142,123)', 4);
+    poly([[50, 700], [300, 560], [560, 690], [760, 590], [1150, 700], [1150, 760], [50, 760]], 'rgb(79,111,99)', 4);
+    ell(1000, 150, 60, 60, 'rgb(255,209,102)', 4);
+    [[230, 160, 90, 34], [300, 185, 70, 30], [160, 190, 60, 26], [560, 110, 80, 28], [620, 135, 60, 24]].forEach((c) => ell(c[0], c[1], c[2], c[3], '#fff'));
+    poly([[110, 760], [130, 600], [230, 540], [330, 600], [350, 760]], '#fff', 5);
+    [[[170, 640], [190, 700]], [[230, 620], [232, 720]], [[290, 640], [270, 700]], [[150, 710], [200, 730]]].forEach((sg) => stroke(sg, 4));
+    ell(230, 470, 78, 86, 'rgb(242,201,165)', 5);
+    poly([[150, 450], [170, 380], [230, 360], [300, 380], [312, 450], [280, 420], [230, 410], [180, 425]], 'rgb(58,42,34)', 4);
+    ell(200, 480, 7, 9, BK); ell(262, 480, 7, 9, BK);
+    stroke([[205, 520], [230, 528], [255, 520]], 4);
+    box(50, 50, 1150, 760, null, 7);
+    vgrad(50, 800, 620, 1380, 'rgb(24,32,62)', 'rgb(44,58,92)');
+    ell(520, 880, 50, 50, 'rgb(255,250,220)', 4);
+    [[120, 870], [200, 960], [300, 900], [400, 990], [460, 1040], [150, 1040]].forEach((p) => ell(p[0], p[1], 5, 5, '#fff'));
+    poly([[50, 1380], [50, 1200], [160, 1200], [160, 1100], [250, 1100], [250, 1250], [360, 1250], [360, 1150], [470, 1150], [470, 1300], [620, 1300], [620, 1380]], 'rgb(36,48,80)', 4);
+    box(50, 800, 620, 1380, null, 7);
+    box(660, 800, 1150, 1380, 'rgb(244,162,97)');
+    box(900, 880, 1060, 1380, 'rgb(120,78,52)', 5);
+    poly([[700, 1380], [710, 1240], [790, 1200], [880, 1250], [890, 1380]], 'rgb(70,110,200)', 5);
+    ell(795, 1130, 62, 70, 'rgb(242,201,165)', 5);
+    box(660, 800, 1150, 1380, null, 7);
+    box(50, 1420, 1150, 1650, 'rgb(205,234,192)');
+    for (let gx = 60; gx < 1140; gx += 40) stroke([[gx, 1650], [gx + 8, 1600], [gx + 16, 1650]], 3, 'rgb(90,140,80)');
+    box(50, 1420, 1150, 1650, null, 7);
+    const nb = SC.narr.box;
+    box(nb[0], nb[1], nb[2], nb[3], SC.narr.fill, 4);
+    SC.bubbles.forEach((b) => {
+      if (b.k === 'e') {
+        const [cx, cy] = b.c, [rx, ry] = b.r;
+        ell(cx, cy, rx + 5, ry + 5, BK);
+        let ang = 0, pt = null;
+        if (b.tail) {
+          ang = Math.atan2(b.tail[1] - cy, b.tail[0] - cx);
+          pt = (a, k) => [cx + rx * k * Math.cos(a), cy + ry * k * Math.sin(a)];
+          poly([pt(ang - 0.26, 1.02), b.tail, pt(ang + 0.26, 1.02)], BK);
+        }
+        ell(cx, cy, rx, ry, '#fff');
+        if (b.tail) poly([pt(ang - 0.2, 0.9), [b.tail[0] - 9 * Math.cos(ang), b.tail[1] - 9 * Math.sin(ang)], pt(ang + 0.2, 0.9)], '#fff');
+      } else {
+        const [x0, y0, x1, y1] = b.box;
+        rr(x0 - 5, y0 - 5, x1 + 5, y1 + 5, 30, BK);
+        rr(x0, y0, x1, y1, 26, '#fff');
+      }
+    });
+    g.font = '900 110px "Noto Sans JP","Hiragino Sans","Yu Gothic",Meiryo,"Noto Sans CJK JP",sans-serif';
+    g.textAlign = 'left'; g.textBaseline = 'top';
+    g.lineWidth = 14; g.strokeStyle = BK; g.strokeText('ドン', 870, 830);
+    g.fillStyle = 'rgb(214,40,40)'; g.fillText('ドン', 870, 830);
+  }
+  if (o.text) {
+    const JPF = '"Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,"Noto Sans CJK JP",sans-serif';
+    const VNF = '"Be Vietnam Pro","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+    g.fillStyle = BK; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const vtext = (cols, cx, cy, size) => {
+      g.font = '700 ' + size + 'px ' + JPF;
+      const n = cols.length;
+      cols.forEach((str, k) => {
+        const x = cx + ((n - 1) / 2 - k) * size * 1.38, chars = Array.from(str);
+        let y = cy - (chars.length * size * 1.08) / 2 + size * 0.54;
+        chars.forEach((ch) => { g.fillText(ch, x, y); y += size * 1.08; });
+      });
+    };
+    const htext = (lines, cx, cy, size, fam) => {
+      g.font = '700 ' + size + 'px ' + fam;
+      const lh = size * 1.3;
+      let y = cy - (lines.length * lh) / 2 + lh / 2;
+      lines.forEach((s2) => { g.fillText(s2, cx, y); y += lh; });
+    };
+    SC.bubbles.forEach((b) => {
+      const c = b.k === 'e' ? b.c : [(b.box[0] + b.box[2]) / 2, (b.box[1] + b.box[3]) / 2];
+      if (lang === 'ja') { if (b.ja_h) htext(b.ja_h, c[0], c[1], b.js, JPF); else vtext(b.ja, c[0], c[1], b.js); } else htext(b.vi, c[0], c[1], b.vs, VNF);
+    });
+    const nb = SC.narr.box, nc = [(nb[0] + nb[2]) / 2, (nb[1] + nb[3]) / 2];
+    if (lang === 'ja') vtext(SC.narr.ja, nc[0], nc[1], SC.narr.js); else htext(SC.narr.vi, nc[0], nc[1], SC.narr.vs, VNF);
+  }
+  g.restore();
+}
+function toTone(id, pitch) {
+  const d = id.data, w = id.width, h = id.height, ca = Math.SQRT1_2, sa = Math.SQRT1_2, TP = Math.PI * 2;
+  for (let y = 0, i = 0; y < h; y++) {
+    for (let x = 0; x < w; x++, i += 4) {
+      const L = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
+      let v;
+      if (L < 70) v = 0; else if (L > 232) v = 255;
+      else {
+        const u = ((x * ca + y * sa) / pitch) * TP, t = ((-x * sa + y * ca) / pitch) * TP;
+        v = 1 - L / 255 > 1 - 0.5 * (1 + Math.cos(u) * Math.cos(t)) ? 0 : 255;
+      }
+      d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
+    }
+  }
+}
+async function loadSample() {
+  if (S.busy) return;
+  leaveBatch();
+  setBusy('Đang vẽ ảnh mẫu…', 0.05);
+  try { await Promise.race([document.fonts.load('700 32px "Be Vietnam Pro"', 'Chào Việt'), new Promise((r) => setTimeout(r, 1500))]); } catch (e) { /* bỏ qua */ }
+  const s = 0.75, Wc = 900, Hc = 1275;
+  const cc = mk(Wc, Hc), cg = cc.getContext('2d', { willReadFrequently: true });
+  cg.fillStyle = '#fff'; cg.fillRect(0, 0, Wc, Hc);
+  drawScene(cg, s, 0, 0, 'ja', { shapes: true, text: true });
+  const sb = 0.585, Wb = Math.round(1200 * sb), Hb = Math.round(1700 * sb);
+  const bc = mk(Wb, Hb), bg = bc.getContext('2d', { willReadFrequently: true });
+  bg.fillStyle = '#fff'; bg.fillRect(0, 0, Wb, Hb);
+  drawScene(bg, sb, -5, 4, 'vi', { shapes: true, text: false });
+  const id = bg.getImageData(0, 0, Wb, Hb); toTone(id, 4.2); bg.putImageData(id, 0, 0);
+  drawScene(bg, sb, -5, 4, 'vi', { shapes: false, text: true });
+  S.sample = true;
+  S.col = sourceFromCanvas(cc, 'anh-mau');
+  S.bw = slim(sourceFromCanvas(bc, 'anh-mau-den-trang'));
+  renderZones();
+  await processPair();
+}
+
+/* ------------------------------------------------------------ sự kiện */
+function setTool(t) {
+  S.tool = t;
+  $$('#toolSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === t)));
+  els.scroller.className = 'scroller t-' + t;
+  els.hint.textContent = HINTS[t];
+}
+function setView(v) {
+  S.view = v;
+  $$('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  requestRender();
+}
+function imgPt(e) {
+  const r = els.sheet.getBoundingClientRect();
+  return [(e.clientX - r.left) / S.zoom, (e.clientY - r.top) / S.zoom];
+}
+function onDown(e) {
+  if (!S.col || S.busy || (e.button !== 0 && e.button !== 1)) return;
+  const [ix, iy] = imgPt(e);
+  const pan = e.button === 1 || S.space;
+  if (pan || S.tool === 'select') {
+    S.drag = { type: 'pan', sx: e.clientX, sy: e.clientY, sl: els.scroller.scrollLeft, st: els.scroller.scrollTop, moved: false, hit: pan ? null : regionAt(ix, iy) };
+  } else if (S.tool === 'bubble') S.drag = { type: 'click', sx: e.clientX, sy: e.clientY, ix, iy, moved: false };
+  else if (S.tool === 'rect') S.drag = { type: 'rect', x0: ix, y0: iy, x1: ix, y1: iy };
+  else if (S.tool === 'lasso') S.drag = { type: 'lasso', pts: [[ix, iy]] };
+  try { els.scroller.setPointerCapture(e.pointerId); } catch (err) { /* bỏ qua */ }
+}
+function onMove(e) {
+  if (S.col) {
+    const [ix, iy] = imgPt(e);
+    if (ix >= 0 && iy >= 0 && ix < S.col.w && iy < S.col.h) els.coord.textContent = 'x ' + Math.round(ix) + ' · y ' + Math.round(iy);
+  }
+  const d = S.drag;
+  if (!d) return;
+  if (d.type === 'pan') {
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (Math.abs(dx) + Math.abs(dy) > 4) { d.moved = true; els.scroller.classList.add('panning'); }
+    if (d.moved) { els.scroller.scrollLeft = d.sl - dx; els.scroller.scrollTop = d.st - dy; }
+  } else if (d.type === 'click') {
+    if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 6) d.moved = true;
+  } else {
+    const [ix, iy] = imgPt(e);
+    if (d.type === 'rect') { d.x1 = ix; d.y1 = iy; } else d.pts.push([ix, iy]);
+    drawOverlay();
+  }
+}
+function onUp() {
+  const d = S.drag;
+  S.drag = null;
+  els.scroller.classList.remove('panning');
+  if (!d) return;
+  if (d.type === 'pan') {
+    if (!d.moved) { if (d.hit) select(d.hit.id); else if (S.sel) select(null); }
+  } else if (d.type === 'click') {
+    if (!d.moved) addBubbleAt(d.ix, d.iy);
+  } else if (d.type === 'rect') {
+    addManual(GCV.regionFromRect(d.x0, d.y0, d.x1, d.y1, S.col.w, S.col.h), 'rect');
+  } else if (d.type === 'lasso') {
+    addManual(GCV.regionFromPolygon(d.pts, S.col.w, S.col.h), 'lasso');
+  }
+  drawOverlay();
+}
+
+function wire() {
+  // nhận ảnh
+  const pick = (input, drop, role) => {
+    drop.addEventListener('click', () => input.click());
+    drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+    input.addEventListener('change', () => { if (input.files.length) acceptFiles(input.files, role); input.value = ''; });
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('over'); const n = e.dataTransfer.files.length; acceptFiles(e.dataTransfer.files, n === 2 ? null : role); });
+  };
+  pick($('fileBw'), $('dropBw'), 'bw');
+  pick($('fileCol'), $('dropCol'), 'col');
+  $('btnPickBoth').addEventListener('click', () => $('fileAny').click());
+  $('fileAny').addEventListener('change', (e) => { if (e.target.files.length) acceptFiles(e.target.files, null); e.target.value = ''; });
+  $('btnSample').addEventListener('click', loadSample);
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => { e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files.length) acceptFiles(e.dataTransfer.files, null); });
+  window.addEventListener('paste', (e) => {
+    const fs = e.clipboardData && e.clipboardData.files;
+    if (fs && fs.length) { e.preventDefault(); acceptFiles(fs, null); }
+  });
+
+  // nhiều trang
+  $('pgStrip').addEventListener('click', (e) => { const b = e.target.closest('.pg-item'); if (b) gotoPage(Number(b.dataset.i)); });
+  $('pgPrev').addEventListener('click', () => gotoPage(B.cur - 1));
+  $('pgNext').addEventListener('click', () => gotoPage(B.cur + 1));
+  $('pgProc').addEventListener('click', processAll);
+  $('pgZip').addEventListener('click', exportAll);
+  $('busyCancel').addEventListener('click', () => { B.cancel = true; $('busyCancel').hidden = true; els.busyMsg.textContent = 'Đang dừng sau trang này…'; });
+
+  // căn ảnh
+  $('btnAlign').addEventListener('click', () => { if (S.col && S.bw && !S.busy) processPair(); });
+  $('chkWarp').addEventListener('change', (e) => { S.useWarp = e.target.checked; if (S.rect) scheduleRealign(); });
+  $('btnAlignReset').addEventListener('click', () => { if (S.rect0) { S.rect = Object.assign({}, S.rect0); scheduleRealign(); } });
+  $$('.dpad button').forEach((b) => b.addEventListener('click', (e) => {
+    if (!S.rect) return;
+    const [dx, dy] = b.dataset.n.split(',').map(Number), st = e.shiftKey ? 10 : 1;
+    S.rect.ox += dx * st; S.rect.oy += dy * st; scheduleRealign();
+  }));
+  $$('.scalebtns button').forEach((b) => b.addEventListener('click', (e) => {
+    if (!S.rect) return;
+    const f = 1 + Number(b.dataset.s) * (e.shiftKey ? 0.01 : 0.001), r = S.rect;
+    const cx = r.ox + r.rw / 2, cy = r.oy + r.rh / 2;
+    r.rw *= f; r.rh *= f; r.ox = cx - r.rw / 2; r.oy = cy - r.rh / 2; scheduleRealign();
+  }));
+
+  // tìm khung
+  $('chkTint').addEventListener('change', (e) => { S.tinted = e.target.checked; if (S.ctx && !S.busy) $('btnDetect').click(); });
+  $('btnDetect').addEventListener('click', async () => { if (!S.ctx || S.busy) return; const gen = ++S.gen; await runDetect(gen, false); if (gen === S.gen) setBusy(null); });
+  $('tolR').addEventListener('input', (e) => { S.tol = Number(e.target.value); $('tolO').textContent = S.tol; });
+
+  // danh sách khung
+  els.list.addEventListener('click', (e) => {
+    const li = e.target.closest('.reg');
+    if (!li) return;
+    const id = Number(li.dataset.id);
+    if (e.target.closest('.rdel')) { removeRegion(id); return; }
+    if (e.target.classList.contains('rchk')) {
+      const r = S.regions.find((q) => q.id === id);
+      if (r) { r.enabled = e.target.checked; renderList(); requestRender(); }
+      return;
+    }
+    select(id);
+  });
+  // bảng chỉnh
+  $('inEnable').addEventListener('change', (e) => { const r = selected(); if (r) { r.enabled = e.target.checked; renderList(); requestRender(); } });
+  $('inFill').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; patchOpt({ fill: b.dataset.v }); renderInspector(); });
+  $('inSens').addEventListener('input', (e) => { $('inSensO').textContent = e.target.value; patchOpt({ sens: Number(e.target.value) }); });
+  $('inGrow').addEventListener('input', (e) => { $('inGrowO').textContent = e.target.value; patchOpt({ grow: Number(e.target.value) }); });
+  const shiftChange = () => patchOpt({ shiftX: -clamp(Number($('inDx').value) || 0, -80, 80), shiftY: -clamp(Number($('inDy').value) || 0, -80, 80) });
+  $('inDx').addEventListener('input', shiftChange); $('inDy').addEventListener('input', shiftChange);
+  $('inAutoColor').addEventListener('change', (e) => {
+    if (e.target.checked) patchOpt({ textColor: null });
+    else patchOpt({ textColor: hexRgb($('inColor').value) });
+    renderInspector();
+  });
+  $('inColor').addEventListener('input', (e) => patchOpt({ textColor: hexRgb(e.target.value) }));
+  $('inInvert').addEventListener('change', (e) => patchOpt({ invert: e.target.value === 'auto' ? 'auto' : e.target.value === 'on' }));
+  $('inDelete').addEventListener('click', () => { const r = selected(); if (r) removeRegion(r.id); });
+
+  // xuất ảnh
+  $('fmtSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    S.fmt = b.dataset.v;
+    $$('#fmtSeg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    $('qRow').hidden = S.fmt !== 'jpg';
+  });
+  $('qR').addEventListener('input', (e) => { S.quality = Number(e.target.value); $('qO').textContent = S.quality; });
+  $('btnSave').addEventListener('click', () => exportImage(false));
+  $('btnSaveLayer').addEventListener('click', () => exportImage(true));
+
+  // thanh công cụ
+  $('toolSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTool(b.dataset.v); });
+  $('viewSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setView(b.dataset.v); });
+  $('zIn').addEventListener('click', () => zoomCenter(1.25));
+  $('zOut').addEventListener('click', () => zoomCenter(0.8));
+  $('zFit').addEventListener('click', () => { fitZoom(); });
+  $('ovChk').addEventListener('change', (e) => { S.showOverlay = e.target.checked; drawOverlay(); });
+
+  // khung xem
+  els.scroller.addEventListener('pointerdown', onDown);
+  els.scroller.addEventListener('pointermove', onMove);
+  els.scroller.addEventListener('pointerup', onUp);
+  els.scroller.addEventListener('pointercancel', () => { S.drag = null; els.scroller.classList.remove('panning'); drawOverlay(); });
+  els.scroller.addEventListener('scroll', drawOverlay, { passive: true });
+  els.scroller.addEventListener('wheel', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || !S.col) return;
+    e.preventDefault();
+    zoomAt(S.zoom * Math.exp(-e.deltaY * 0.0016), e.clientX, e.clientY);
+  }, { passive: false });
+  new ResizeObserver(() => { if (S.fit) fitZoom(); drawOverlay(); }).observe(els.scroller);
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { for (const r of S.regions) r._t = null; drawOverlay(); });
+
+  // phím tắt
+  window.addEventListener('keydown', (e) => {
+    const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA');
+    if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === ' ') { S.space = true; e.preventDefault(); return; }
+    const tools = { v: 'select', b: 'bubble', r: 'rect', l: 'lasso' }, views = { 1: 'result', 2: 'color', 3: 'bw', 4: 'overlay' };
+    if (tools[k]) setTool(tools[k]);
+    else if (views[k]) setView(views[k]);
+    else if (k === '+' || k === '=') zoomCenter(1.25);
+    else if (k === '-') zoomCenter(0.8);
+    else if (k === '0') fitZoom();
+    else if (k === '[' && B.pages.length) gotoPage(B.cur - 1);
+    else if (k === ']' && B.pages.length) gotoPage(B.cur + 1);
+    else if (k === 'o') { S.showOverlay = !S.showOverlay; $('ovChk').checked = S.showOverlay; drawOverlay(); }
+    else if ((k === 'delete' || k === 'backspace') && S.sel) { removeRegion(S.sel); e.preventDefault(); }
+  });
+  window.addEventListener('keyup', (e) => { if (e.key === ' ') S.space = false; });
+}
+
+function boot() {
+  wire();
+  setTool('select');
+  renderList();
+  updateChips();
+  getDownloads();
+  window.__gcv = { S, B, GCV };
+  loadSample();
+}
+boot();
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+</script>
+</body></html>

@@ -310,7 +310,7 @@ button { cursor: pointer; }
         <button class="btn primary" id="btnDetect" type="button">Tự tìm khung thoại</button>
         <label class="slider"><span>Độ nhạy nền khung</span><output id="tolO">26</output><input type="range" id="tolR" min="10" max="60" step="1" value="26"></label>
         <label class="chk" title="Tìm ô chữ có nền màu phẳng ở ảnh màu (ô dẫn truyện vàng, khung xanh…) nếu ảnh đen trắng có ô trắng tương ứng, ví dụ ô có chữ Việt. Bỏ chọn nếu web bắt nhầm."><input type="checkbox" id="chkTint" checked> Tìm cả ô nền màu (vàng, xanh…)</label>
-        <p class="help">Ô không được tìm thấy, hoặc chữ nằm trên tranh: chọn công cụ <b>Bấm khung</b>, <b>Ô chữ nhật</b> hay <b>Vẽ tay</b> trên thanh công cụ rồi chỉ vào khung đó. SFX không bị đụng tới.</p>
+        <p class="help">Ô không được tìm thấy, hoặc chữ nằm trên tranh: chọn công cụ <b>Bấm khung</b>, <b>Ô chữ nhật</b> hay <b>Vẽ tay</b> trên thanh công cụ rồi chỉ vào khung đó. SFX không bị đụng tới trừ khi bạn tự chọn vùng đó; khi chọn, chữ Việt lấy đúng màu từng nét SFX gốc (xanh ngọc, hồng…).</p>
         <ul class="regions" id="regionList" aria-label="Danh sách khung"></ul>
         <div class="insp" id="insp" hidden>
           <div class="insp-h"><strong id="inspTitle">Khung 1</strong><label class="switch"><input type="checkbox" id="inEnable"> Áp dụng</label></div>
@@ -324,9 +324,14 @@ button { cursor: pointer; }
           </div>
           <div class="field"><span>Màu chữ Việt</span>
             <div class="colorrow"><label><input type="checkbox" id="inAutoColor" checked> Lấy theo chữ gốc</label><input type="color" id="inColor" value="#000000" aria-label="Chọn màu chữ"></div>
+            <label class="chk" id="rowLocal" style="margin-top:8px" title="Bật: mỗi nét chữ Việt lấy màu của nét chữ Nhật gần nó nhất, hợp với SFX nhiều màu (xanh ngọc, hồng…). Tắt: cả vùng dùng một màu chung."><input type="checkbox" id="inLocalColor" checked> Mỗi chữ theo màu nét gốc gần nhất</label>
           </div>
           <div class="field"><span>Kiểu nền khung</span>
             <select id="inInvert"><option value="auto">Tự nhận</option><option value="off">Nền sáng, chữ tối</option><option value="on">Nền tối, chữ sáng</option></select>
+          </div>
+          <div class="field"><span>Tranh nằm dưới chữ</span>
+            <label class="chk" title="Chữ đen mảnh có quầng trắng mỏng đè thẳng lên tranh (không có khung thoại): web giữ nguyên tranh, chỉ xoá chữ + quầng cũ rồi vẽ chữ Việt có viền trắng. Tắt nếu web nhận nhầm."><input type="checkbox" id="inHalo" checked> Chữ có viền trắng trên tranh (tự nhận)</label>
+            <select id="inThin" aria-label="Giữ tia tốc độ và nét mảnh của tranh" title="Tia tốc độ, nét gạch bóng… dưới chữ SFX: giữ nguyên tranh, chỉ thay chữ."><option value="auto">Tia tốc độ, nét mảnh: tự nhận</option><option value="on">Luôn giữ tia và nét mảnh của tranh</option><option value="off">Không giữ (xoá cả vùng)</option></select>
           </div>
           <button class="btn danger" id="inDelete" type="button">Xoá khung này</button>
         </div>
@@ -1529,11 +1534,12 @@ async function detectRegions(ctx, opt, onProgress) {
     for (const r of extra) out.push(r);
   }
   const band = Math.max(1, H / 8);
-  out.sort((p, q) => {
+  const merged = opt.halo === 'off' ? out : mergeHaloFragments(out, ctx);
+  merged.sort((p, q) => {
     const bp = Math.floor((p.y + p.h / 2) / band), bq = Math.floor((q.y + q.h / 2) / band);
     return bp !== bq ? bp - bq : (q.x + q.w / 2) - (p.x + p.w / 2);
   });
-  return { regions: out, rejected };
+  return { regions: merged, rejected };
 }
 
 /* --------------------------------------------- căn tinh từng khung (±px) */
@@ -1841,6 +1847,151 @@ function inpaintPushPull(rgba, w, h, hole, known) {
   return true;
 }
 
+// Gán nhãn các cụm liên thông (8 hướng) của mặt nạ nhị phân: trả {lab (0 = nền, 1..n), n}
+function labelComponents(m, w, h) {
+  const N = w * h, lab = new Int32Array(N), stack = [];
+  let n = 0;
+  for (let s0 = 0; s0 < N; s0++) {
+    if (!m[s0] || lab[s0]) continue;
+    n++; lab[s0] = n; stack.push(s0);
+    while (stack.length) {
+      const i = stack.pop(), x = i % w, y = (i - x) / w;
+      for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue; for (let dx = -1; dx <= 1; dx++) { const xx = x + dx; if (xx < 0 || xx >= w) continue; const q = yy * w + xx; if (m[q] && !lab[q]) { lab[q] = n; stack.push(q); } } }
+    }
+  }
+  return { lab, n };
+}
+
+// Loại khỏi phần nét dày những mảnh NHỎ mà ảnh bên kia cũng có nét ở đúng chỗ đó (đoạn nét tranh bị dày lên), không phải chữ.
+function dropArtFragments(body, other, w, h, minArea, cover) {
+  const n = w * h, od = new Uint8Array(n);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!other[y * w + x]) continue;
+    for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue; for (let dx = -1; dx <= 1; dx++) { const xx = x + dx; if (xx >= 0 && xx < w) od[yy * w + xx] = 1; } }
+  }
+  const lab = new Uint8Array(n), out = Uint8Array.from(body), stack = [];
+  let cnt = 0;
+  for (let s0 = 0; s0 < n; s0++) {
+    if (!body[s0] || lab[s0]) continue;
+    const comp = []; lab[s0] = 1; stack.push(s0);
+    while (stack.length) {
+      const i = stack.pop(); comp.push(i);
+      const x = i % w, y = (i - x) / w;
+      for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= h) continue; for (let dx = -1; dx <= 1; dx++) { const xx = x + dx; if (xx < 0 || xx >= w) continue; const q = yy * w + xx; if (body[q] && !lab[q]) { lab[q] = 1; stack.push(q); } } }
+    }
+    let cov = 0; for (const i of comp) cov += od[i];
+    if (comp.length < minArea && cov >= cover * comp.length) { for (const i of comp) out[i] = 0; } else cnt += comp.length;
+  }
+  return { body: out, n: cnt };
+}
+
+// Tách phần nét DÀY của một mặt nạ nét: lõi = điểm cách mép ≥ rc, rồi nở lại đúng bề rộng nét (nét mảnh bị loại).
+function thickBody(P, w, h, rc) {
+  const n = w * h;
+  const dt = distToZero(P, w, h, false);
+  const nc = new Uint8Array(n); let ncore = 0;
+  for (let i = 0; i < n; i++) { if (P[i] && dt[i] >= rc) ncore++; else nc[i] = 1; }
+  const body = new Uint8Array(n);
+  if (!ncore) return { body, n: 0, dt };
+  const dc = distToZero(nc, w, h, false);
+  let cnt = 0;
+  for (let i = 0; i < n; i++) if (P[i] && dc[i] <= rc + 0.5) { body[i] = 1; cnt++; }
+  return { body, n: cnt, dt };
+}
+
+// Mảng lớn (quầng sáng, mảng tối của tranh): cụm nét dày có bán kính nội tiếp > Rbig, không thể là nét chữ. Trả mặt nạ hoặc null.
+function bigBlobs(P, w, h, rc, Rbig) {
+  const tc = thickBody(P, w, h, rc);
+  if (!tc.n) return null;
+  const n = w * h, { lab, n: nc } = labelComponents(tc.body, w, h);
+  const mx = new Float32Array(nc + 1);
+  for (let i = 0; i < n; i++) { const id = lab[i]; if (id && tc.dt[i] > mx[id]) mx[id] = tc.dt[i]; }
+  const big = new Uint8Array(nc + 1);
+  let any = 0;
+  for (let id = 1; id <= nc; id++) if (mx[id] > Rbig) { big[id] = 1; any++; }
+  if (!any) return null;
+  const m = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (lab[i] && big[lab[i]]) m[i] = 1;
+  return m;
+}
+
+// Phần "nét chữ dày" của một mặt nạ nét: nét dày (thickBody) rồi loại các mảnh là nét tranh bị dày lên:
+// mảnh nhỏ mà ảnh bên kia cũng có nét đúng chỗ đó, và mảnh quá dài so với bề dày (L²/S ≥ kLine: đoạn tia dính nhau).
+// Trả {body, n, maxA (diện tích cụm lớn nhất)}.
+function strokeBody(P, other, w, h, rc, aSmall, kLine) {
+  let tc = thickBody(P, w, h, rc);
+  if (!tc.n) return { body: tc.body, n: 0, maxA: 0 };
+  tc = dropArtFragments(tc.body, other, w, h, aSmall, 0.8);
+  if (!tc.n) return { body: tc.body, n: 0, maxA: 0 };
+  const { lab, n: nc } = labelComponents(tc.body, w, h);
+  const x0 = new Int32Array(nc + 1).fill(1 << 30), y0 = new Int32Array(nc + 1).fill(1 << 30);
+  const x1 = new Int32Array(nc + 1).fill(-1), y1 = new Int32Array(nc + 1).fill(-1), ar = new Int32Array(nc + 1);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const id = lab[y * w + x];
+      if (!id) continue;
+      ar[id]++;
+      if (x < x0[id]) x0[id] = x;
+      if (x > x1[id]) x1[id] = x;
+      if (y < y0[id]) y0[id] = y;
+      if (y > y1[id]) y1[id] = y;
+    }
+  }
+  const keep = new Uint8Array(nc + 1);
+  let cnt = 0, maxA = 0;
+  for (let id = 1; id <= nc; id++) {
+    const L = Math.hypot(x1[id] - x0[id] + 1, y1[id] - y0[id] + 1);
+    if (L * L >= kLine * ar[id]) continue;          // dài mảnh như tia
+    keep[id] = 1; cnt += ar[id]; if (ar[id] > maxA) maxA = ar[id];
+  }
+  const body = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) if (lab[i] && keep[lab[i]]) body[i] = 1;
+  return { body, n: cnt, maxA };
+}
+
+// Các cụm nét MẢNH DÀI (đường chéo khung bao ≥ Lmin): tia tốc độ, nét gạch bóng, viền khung…
+// Nét chữ thường ngắn nên không được tính; dùng làm bằng chứng "nền là tranh nét". Trả {mask, area}.
+function longThin(thin, w, h, Lmin) {
+  const { lab, n } = labelComponents(thin, w, h);
+  const mask = new Uint8Array(w * h);
+  if (!n) return { mask, area: 0 };
+  const x0 = new Int32Array(n + 1).fill(1 << 30), y0 = new Int32Array(n + 1).fill(1 << 30);
+  const x1 = new Int32Array(n + 1).fill(-1), y1 = new Int32Array(n + 1).fill(-1);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const id = lab[y * w + x];
+      if (!id) continue;
+      if (x < x0[id]) x0[id] = x;
+      if (x > x1[id]) x1[id] = x;
+      if (y < y0[id]) y0[id] = y;
+      if (y > y1[id]) y1[id] = y;
+    }
+  }
+  let area = 0;
+  for (let i = 0; i < w * h; i++) {
+    const id = lab[i];
+    if (id && Math.hypot(x1[id] - x0[id], y1[id] - y0[id]) >= Lmin) { mask[i] = 1; area++; }
+  }
+  return { mask, area };
+}
+function longThinArea(thin, w, h, Lmin) { return longThin(thin, w, h, Lmin).area; }
+
+// Độ "cùng hướng" (0..1) của các nét trong mặt nạ m: tia tốc độ ≈ 0,65–0,9; gạch, viền khung, chữ mảnh ≈ 0–0,3.
+// Dùng tensor cấu trúc của ảnh xám tại các điểm của m (nở 1 điểm để lấy cả hai mép nét).
+function lineCoherence(cg, m, w, h) {
+  let jxx = 0, jyy = 0, jxy = 0;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      if (!(m[i] || m[i - 1] || m[i + 1] || m[i - w] || m[i + w])) continue;
+      const gx = cg[i + 1] - cg[i - 1], gy = cg[i + w] - cg[i - w];
+      jxx += gx * gx; jyy += gy * gy; jxy += gx * gy;
+    }
+  }
+  const tr = jxx + jyy;
+  return tr > 0 ? Math.sqrt((jxx - jyy) * (jxx - jyy) + 4 * jxy * jxy) / tr : 0;
+}
+
 // Bỏ các cụm điểm ảnh nhỏ (chấm tông) khỏi lớp chữ
 function despeckle(alpha, w, h, minArea) {
   const lab = new Uint8Array(w * h);
@@ -1910,17 +2061,364 @@ function sampleRegion(ctx, bx, by, w, h, SS, sx, sy, fillV, ex, ey, ccx, ccy) {
   return out;
 }
 
+/* ------------------------------------ màu chữ theo từng chữ gốc (SFX nhiều màu) */
+// Điểm nguồn gần nhất của mỗi điểm ảnh (chuyển đổi đặc trưng xấp xỉ Euclid, hai lượt quét).
+function nearestSrc(src, w, h) {
+  const n = w * h, idx = new Int32Array(n).fill(-1), d2 = new Float32Array(n).fill(1e30);
+  for (let i = 0; i < n; i++) if (src[i]) { idx[i] = i; d2[i] = 0; }
+  const relax = (i, x, y, q) => {
+    const s = idx[q]; if (s < 0) return;
+    const sx = s % w, sy = (s - sx) / w, dx = x - sx, dy = y - sy, dd = dx * dx + dy * dy;
+    if (dd < d2[i]) { d2[i] = dd; idx[i] = s; }
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (x > 0) relax(i, x, y, i - 1);
+      if (y > 0) { relax(i, x, y, i - w); if (x > 0) relax(i, x, y, i - w - 1); if (x < w - 1) relax(i, x, y, i - w + 1); }
+    }
+  }
+  for (let y = h - 1; y >= 0; y--) {
+    for (let x = w - 1; x >= 0; x--) {
+      const i = y * w + x;
+      if (x < w - 1) relax(i, x, y, i + 1);
+      if (y < h - 1) { relax(i, x, y, i + w); if (x < w - 1) relax(i, x, y, i + w + 1); if (x > 0) relax(i, x, y, i + w - 1); }
+    }
+  }
+  return { idx, d2 };
+}
+
+// Màu của từng điểm chữ Việt theo nét gốc gần nhất. Chỉ dùng khi chữ gốc có màu (SFX xanh ngọc, hồng…);
+// chữ đen (thoại, ô dẫn truyện) trả null để giữ cách tính một màu. Chỉ xét lõi nét, bỏ viền mờ pha màu nền.
+function localInkColors(crop, ink, cg, w, h, k, mask) {
+  const n = w * h, core = new Uint8Array(n);
+  let nCore = 0;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      if (ink[i] && ink[i - 1] && ink[i + 1] && ink[i - w] && ink[i + w]) { core[i] = 1; nCore++; }
+    }
+  }
+  if (nCore < 24) return null;
+  const co = new Uint8Array(n), dk = new Uint8Array(n), dkAll = new Uint8Array(n);
+  let nCo = 0, nDk = 0;
+  for (let i = 0; i < n; i++) {
+    if (!ink[i]) continue;
+    const j = i << 2, r = crop[j], g = crop[j + 1], b = crop[j + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (mx >= 90 && (mx - mn) / mx >= 0.28) { if (core[i]) { co[i] = 1; nCo++; } } else if (cg[i] < 100) dkAll[i] = 1;
+  }
+  if (nCo < 20) return null;
+  // Mảng tối chạm mép vùng chọn là nét viền/tóc/khung truyện kéo dài ra ngoài, không phải chữ: bỏ đi.
+  // Xét cả điểm biên (không chỉ lõi) để nét mảnh vẫn nối liền với phần chạm mép.
+  {
+    const ins = distToZero(mask || new Uint8Array(n).fill(1), w, h, true), rim = Math.max(2, Math.round(3 * k));
+    const lab = new Uint8Array(n), stack = [];
+    for (let s = 0; s < n; s++) {
+      if (!dkAll[s] || lab[s]) continue;
+      const comp = []; let touch = false;
+      lab[s] = 1; stack.push(s);
+      while (stack.length) {
+        const i = stack.pop(); comp.push(i);
+        if (ins[i] <= rim) touch = true;
+        const x = i % w, y = (i - x) / w;
+        for (let dy = -1; dy <= 1; dy++) {
+          const yy = y + dy; if (yy < 0 || yy >= h) continue;
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx; if (xx < 0 || xx >= w) continue;
+            const q = yy * w + xx;
+            if (dkAll[q] && !lab[q]) { lab[q] = 1; stack.push(q); }
+          }
+        }
+      }
+      if (!touch) for (const i of comp) if (core[i]) { dk[i] = 1; nDk++; }
+    }
+  }
+  if (nCo < 0.15 * (nCo + nDk)) return null;
+  // làm mượt màu nét: trung bình các điểm có màu trong cửa sổ 5×5
+  const sm = new Float32Array(n * 3);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!co[i]) continue;
+      let r = 0, g = 0, b = 0, c = 0;
+      for (let dy = -2; dy <= 2; dy++) {
+        const yy = y + dy; if (yy < 0 || yy >= h) continue;
+        for (let dx = -2; dx <= 2; dx++) {
+          const xx = x + dx; if (xx < 0 || xx >= w) continue;
+          const q = yy * w + xx;
+          if (co[q]) { const jq = q << 2; r += crop[jq]; g += crop[jq + 1]; b += crop[jq + 2]; c++; }
+        }
+      }
+      sm[i * 3] = r / c; sm[i * 3 + 1] = g / c; sm[i * 3 + 2] = b / c;
+    }
+  }
+  const nc = nearestSrc(co, w, h);
+  // nét tối sát nét màu là viền của chữ có màu: bỏ qua viền, lấy màu ruột
+  if (nDk) {
+    let adj = 0;
+    for (let i = 0; i < n; i++) if (dk[i] && Math.sqrt(nc.d2[i]) <= 5 * k) adj++;
+    if (adj >= 0.6 * nDk) { dk.fill(0); nDk = 0; }
+  }
+  let dkc = null, nd = null;
+  if (nDk >= 12) {
+    let r = 0, g = 0, b = 0;
+    for (let i = 0; i < n; i++) if (dk[i]) { const j = i << 2; r += crop[j]; g += crop[j + 1]; b += crop[j + 2]; }
+    dkc = [r / nDk, g / nDk, b / nDk];
+    nd = nearestSrc(dk, w, h);
+  }
+  const R = new Uint8Array(n), G = new Uint8Array(n), B = new Uint8Array(n), margin = 2.5 * k;
+  for (let i = 0; i < n; i++) {
+    const s = nc.idx[i];
+    if (s < 0) continue;
+    if (dkc && nd.idx[i] >= 0 && Math.sqrt(nd.d2[i]) + margin < Math.sqrt(nc.d2[i])) { R[i] = dkc[0]; G[i] = dkc[1]; B[i] = dkc[2]; continue; }
+    R[i] = sm[s * 3]; G[i] = sm[s * 3 + 1]; B[i] = sm[s * 3 + 2];
+  }
+  return { R, G, B, nCo, nDk };
+}
+
+/* ------------------------------ chữ đen viền trắng đè lên tranh (không có khung thoại) */
+// Giãn mặt nạ theo ô vuông (hai lượt ngang/dọc); mỗi điểm lan sang trái rl, phải rr, lên rt, xuống rb điểm
+function boxDilateAsym(m, w, h, rl, rt, rr, rb) {
+  const t = new Uint8Array(w * h), o = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const row = y * w; let last = -1e9;
+    for (let x = 0; x < w; x++) { if (m[row + x]) last = x; if (x - last <= rr) t[row + x] = 1; }
+    last = 1e9;
+    for (let x = w - 1; x >= 0; x--) { if (m[row + x]) last = x; if (last - x <= rl) t[row + x] = 1; }
+  }
+  for (let x = 0; x < w; x++) {
+    let last = -1e9;
+    for (let y = 0; y < h; y++) { if (t[y * w + x]) last = y; if (y - last <= rb) o[y * w + x] = 1; }
+    last = 1e9;
+    for (let y = h - 1; y >= 0; y--) { if (t[y * w + x]) last = y; if (last - y <= rt) o[y * w + x] = 1; }
+  }
+  return o;
+}
+function boxDilate(m, w, h, r) { return boxDilateAsym(m, w, h, r, r, r, r); }
+
+// Nhận ra chữ ĐEN MẢNH nằm trong "quầng" trắng mỏng đè trực tiếp lên tranh (kiểu chữ chú thích/thoại không khung):
+//  • G = các cụm tối nhỏ mà gần như cả chu vi đều sát điểm trắng (nét chữ trong quầng), khác mảng tối của tranh;
+//  • C = các cụm trắng chạm G (quầng); bằng chứng: quầng MỎNG (bán kính nội tiếp nhỏ), chữ nằm sát tranh, có tranh quanh.
+// Khung bong bóng trắng bình thường có vùng trắng rộng → không bị nhận nhầm. Trả {ok, why, G, C, hw, haloCol, glyphCol, …}.
+function detectHalo(crop, cg, mask, w, h, k0, inkGray, force) {
+  const n = w * h;
+  const Wm = new Uint8Array(n), Dk = new Uint8Array(n);
+  let mArea = 0, nW = 0;
+  for (let i = 0; i < n; i++) {
+    if (!mask[i]) continue;
+    mArea++;
+    const j = i << 2, r = crop[j], g = crop[j + 1], b = crop[j + 2];
+    const mn = Math.min(r, g, b), mx = Math.max(r, g, b);
+    if (mn >= 200 && mx - mn <= 48) { Wm[i] = 1; nW++; }
+    else if (cg[i] < inkGray && mx - mn <= 90) Dk[i] = 1;      // chữ đen/nâu sẫm; mảng đỏ/xanh đậm của tranh không tính
+  }
+  const st = { ok: false, why: '', mArea, nW };
+  if (nW < 0.05 * mArea) { st.why = 'ít trắng'; return st; }
+  const W2 = boxDilate(Wm, w, h, 2);
+  // độ dày vùng trắng (bán kính nội tiếp; ngoài khung = chưa biết, không tính là mép) và phần trắng DÀY thật (lề trang,
+  // lòng bong bóng): hợp các đĩa bán kính Tth nằm trọn trong vùng trắng. Quầng của chữ đè lên tranh mỏng hơn Tth (≈5.7·k0).
+  const Tth = Math.max(3.2, 7 * k0), Rt = Math.max(8, 16 * k0);
+  const zz = new Uint8Array(n);
+  for (let i = 0; i < n; i++) zz[i] = (!mask[i] || Wm[i]) ? 1 : 0;
+  const dW = distToZero(zz, w, h, false);
+  const ctr = new Uint8Array(n).fill(1); let nCtr = 0;
+  for (let i = 0; i < n; i++) if (Wm[i] && dW[i] >= Tth) { ctr[i] = 0; nCtr++; }
+  const thick = new Uint8Array(n); let dT = null;
+  let W2n = W2;                                   // trắng MỎNG (bỏ phần trắng dày) nở 2 điểm
+  if (nCtr) {
+    dT = distToZero(ctr, w, h, false);
+    const Wn = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (Wm[i]) { if (dT[i] <= Tth) thick[i] = 1; else Wn[i] = 1; }
+    W2n = boxDilate(Wn, w, h, 2);
+  }
+  const { lab, n: nl } = labelComponents(Dk, w, h);
+  if (!nl) { st.why = 'không có chữ tối'; return st; }
+  const area = new Int32Array(nl + 1), per = new Int32Array(nl + 1), perW = new Int32Array(nl + 1), perT = new Int32Array(nl + 1);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x, id = lab[i];
+      if (!id) continue;
+      area[id]++;
+      const edge = (x > 0 && mask[i - 1] && !Dk[i - 1]) || (x < w - 1 && mask[i + 1] && !Dk[i + 1]) ||
+        (y > 0 && mask[i - w] && !Dk[i - w]) || (y < h - 1 && mask[i + w] && !Dk[i + w]);
+      if (edge) { per[id]++; if (W2[i]) perW[id]++; if (W2n[i]) perT[id]++; }
+    }
+  }
+  const AmaxG = 1600 * k0 * k0;
+  const isG = new Uint8Array(nl + 1);
+  let nG = 0, gc = 0;
+  for (let id = 1; id <= nl; id++) {
+    // quầng mỏng bao quanh nét: nét viền tranh sát lề trang/bong bóng (một bên là trắng dày, bên kia là tranh) không phải chữ
+    if (area[id] <= AmaxG && per[id] >= 6 && perW[id] >= 0.62 * per[id] && perT[id] >= 0.35 * per[id]) { isG[id] = 1; nG += area[id]; gc++; }
+  }
+  st.nG = nG; st.gc = gc;
+  if (gc < 3 || nG < Math.max(40, 0.004 * mArea)) { st.why = 'ít nét chữ'; return st; }
+  const G = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (lab[i] && isG[lab[i]]) G[i] = 1;
+  // nét chữ Nhật bị mép khung cắt ngang (chữ còn dài ra ngoài): đếm theo từng cạnh
+  const touchJ = { l: 0, t: 0, r: 0, b: 0 };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!G[i]) continue;
+      if (x === 0 || !mask[i - 1]) touchJ.l++;
+      if (x === w - 1 || !mask[i + 1]) touchJ.r++;
+      if (y === 0 || !mask[i - w]) touchJ.t++;
+      if (y === h - 1 || !mask[i + w]) touchJ.b++;
+    }
+  }
+  st.touchJ = touchJ;
+  // tranh = điểm trong khung không phải trắng, không phải chữ (kể cả viền mờ 2 điểm quanh chữ)
+  const Gd = boxDilate(G, w, h, 2);
+  const nA = new Uint8Array(n); let nArt = 0;
+  for (let i = 0; i < n; i++) { if (mask[i] && !Wm[i] && !Gd[i]) { nA[i] = 0; nArt++; } else nA[i] = 1; }
+  st.artShare = nArt / mArea;
+  if (nArt < 0.08 * mArea && !force) { st.why = 'không có tranh'; return st; }
+  const dA = distToZero(nA, w, h, false);                 // khoảng cách tới điểm tranh gần nhất
+  // quầng = cụm trắng chạm chữ
+  const { lab: wl, n: nwl } = labelComponents(Wm, w, h);
+  const touch = new Uint8Array(nwl + 1);
+  for (let i = 0; i < n; i++) if (Gd[i] && wl[i]) touch[wl[i]] = 1;
+  const dG = distToZero((() => { const t = new Uint8Array(n); for (let i = 0; i < n; i++) t[i] = G[i] ? 0 : 1; return t; })(), w, h, false);
+  const Dc = Math.max(6, 9 * k0);
+  const C = new Uint8Array(n), Wt = new Uint8Array(n); let nC = 0;
+  for (let i = 0; i < n; i++) if (wl[i] && touch[wl[i]]) { Wt[i] = 1; if (dG[i] <= Dc) { C[i] = 1; nC++; } }   // Wt: cả cụm trắng chạm chữ; C: phần sát chữ (≤ Dc)
+  if (nC < 0.8 * nG) { st.why = 'quầng nhỏ'; return st; }
+  // độ dày quầng: bán kính nội tiếp (ngoài khung = chưa biết, không tính là mép)
+  const ths = [];
+  for (let i = 0; i < n; i++) if (Wt[i]) ths.push(dW[i]);      // độ dày tính trên cả cụm trắng: bong bóng có lòng trắng rộng thì dày
+  ths.sort((a, b) => a - b);
+  const p95 = ths[Math.floor(ths.length * 0.95)] || 0, tmax = ths[ths.length - 1] || 0;
+  st.thick95 = p95; st.thickMax = tmax;
+  // fth = tỉ lệ nét chữ nằm sát vùng trắng dày (bong bóng: gần như mọi chữ; quầng mỏng chạm lề trang: chỉ vài chữ ở mép)
+  let fth = 0, fth2 = 0;
+  if (nCtr) {
+    const Rt2 = 2 * Rt; let nt = 0, nt2 = 0;
+    for (let i = 0; i < n; i++) if (G[i]) { if (dT[i] <= Rt) nt++; if (dT[i] <= Rt2) nt2++; }
+    fth = nt / nG; fth2 = nt2 / nG;
+  }
+  st.fth = fth; st.fth2 = fth2; st.nCtr = nCtr;
+  // quầng chỉ gồm phần trắng MỎNG sát chữ: phần trắng dày (lề trang, lòng bong bóng kề bên) không bị xoá/nội suy
+  if (nCtr) for (let i = 0; i < n; i++) if (thick[i]) C[i] = 0;
+  // chữ có tranh sát bên: tỉ lệ điểm chữ cách tranh ≤ Dh
+  const Dh = Math.max(5, 11 * k0);
+  let near = 0;
+  for (let i = 0; i < n; i++) if (G[i] && dA[i] <= Dh) near++;
+  st.fnear = near / nG; st.Dh = Dh;
+  // bề rộng quầng quanh chữ (phía ngoài): phân vị thấp của khoảng cách từ điểm biên chữ tới tranh
+  const dd = [];
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      if (!G[i]) continue;
+      if (G[i - 1] && G[i + 1] && G[i - w] && G[i + w]) continue;
+      if (dA[i] < 1e8) dd.push(dA[i]);
+    }
+  }
+  dd.sort((a, b) => a - b);
+  const hw = dd.length ? dd[Math.floor(dd.length * 0.2)] - 1 : 2;
+  st.hw = hw;
+  // bong bóng: gần như mọi nét chữ nằm sát vùng trắng dày (fth ≥ 0.55, fth2 ≥ 0.95 ở mọi bong bóng đã đo); quầng mỏng của chữ
+  // đè lên tranh dù chạm lề trang trắng chỉ có vài chữ ở mép (fth ≤ 0.13, fth2 ≤ 0.25)
+  if (!force && (fth > 0.3 || fth2 > 0.6)) { st.why = 'vùng trắng dày (bong bóng)'; return st; }
+  if (!force && st.fnear < 0.4) { st.why = 'chữ xa tranh'; return st; }
+  // màu quầng, màu nét
+  let hr = 0, hg = 0, hb = 0, hc = 0;
+  for (let i = 0; i < n; i++) if (C[i] && dW[i] >= 1.5) { const j = i << 2; hr += crop[j]; hg += crop[j + 1]; hb += crop[j + 2]; hc++; }
+  if (!hc) for (let i = 0; i < n; i++) if (C[i]) { const j = i << 2; hr += crop[j]; hg += crop[j + 1]; hb += crop[j + 2]; hc++; }
+  let haloCol = [Math.round(hr / hc), Math.round(hg / hc), Math.round(hb / hc)];
+  if (haloCol[0] >= 246 && haloCol[1] >= 246 && haloCol[2] >= 246) haloCol = [255, 255, 255];
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < n; i++) if (G[i]) hist[cg[i]]++;
+  let acc = 0, cut = 255;
+  for (let g = 0; g < 256; g++) { acc += hist[g]; if (acc >= nG * 0.3) { cut = g; break; } }
+  let gr = 0, gg = 0, gb = 0, gcn = 0;
+  for (let i = 0; i < n; i++) if (G[i] && cg[i] <= cut) { const j = i << 2; gr += crop[j]; gg += crop[j + 1]; gb += crop[j + 2]; gcn++; }
+  const glyphCol = gcn ? [Math.round(gr / gcn), Math.round(gg / gcn), Math.round(gb / gcn)] : [0, 0, 0];
+  return Object.assign(st, { ok: true, G, C, Gd, hw: Math.max(1.5, hw), haloCol, glyphCol, dW, dA });
+}
+
+// Chọn nét CHỮ Việt trong lớp alpha của ảnh đen trắng khi chữ nằm trên tranh: bỏ mảng đen lớn của tranh (nở 2 điểm),
+// bỏ nét tranh mảnh dài hoặc lẻ loi xa chữ. Giữ nét dày (thân chữ) và các nét mảnh ngắn sát chữ (dấu, chấm).
+function pickGlyphB(alpha, w, h, k0, dbg, mask) {
+  const n = w * h, bd = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (alpha[i] >= 0.5) bd[i] = 1;
+  // mảng đen của tranh: phần của nét đủ dày để chứa hình tròn bán kính 9·k0 (nét chữ không bao giờ dày thế)
+  const tcb = thickBody(bd, w, h, 9 * k0);
+  let allow = bd, bigD = null;
+  if (tcb.n) {
+    bigD = boxDilate(tcb.body, w, h, 2);
+    allow = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (bd[i] && !bigD[i]) allow[i] = 1;
+  }
+  const { lab, n: nc } = labelComponents(allow, w, h);
+  const out = new Float32Array(n);
+  if (!nc) return out;
+  const dt = distToZero(allow, w, h, false);
+  const ar = new Int32Array(nc + 1), rm = new Float32Array(nc + 1);
+  const x0 = new Int32Array(nc + 1).fill(1 << 30), y0 = new Int32Array(nc + 1).fill(1 << 30);
+  const x1 = new Int32Array(nc + 1).fill(-1), y1 = new Int32Array(nc + 1).fill(-1);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x, id = lab[i];
+      if (!id) continue;
+      ar[id]++; if (dt[i] > rm[id]) rm[id] = dt[i];
+      if (x < x0[id]) x0[id] = x; if (x > x1[id]) x1[id] = x;
+      if (y < y0[id]) y0[id] = y; if (y > y1[id]) y1[id] = y;
+    }
+  }
+  const rs = 2.85 * k0;
+  const strong = new Uint8Array(nc + 1);
+  const sm = new Uint8Array(n);
+  for (let id = 1; id <= nc; id++) if (rm[id] >= rs && ar[id] >= 12) strong[id] = 1;
+  for (let i = 0; i < n; i++) if (lab[i] && strong[lab[i]]) sm[i] = 1;
+  const zone = boxDilate(sm, w, h, Math.max(3, Math.round(4 * k0)));
+  const inZ = new Int32Array(nc + 1);
+  for (let i = 0; i < n; i++) if (lab[i] && zone[i]) inZ[lab[i]]++;
+  const keep = new Uint8Array(nc + 1), km = new Uint8Array(n), ck = new Uint8Array(nc + 1);
+  for (let id = 1; id <= nc; id++) {
+    const diag = Math.hypot(x1[id] - x0[id] + 1, y1[id] - y0[id] + 1);
+    if (diag * diag > 13 * ar[id]) continue;                       // dài mảnh như nét gạch/viền tranh, không phải chữ
+    if (strong[id]) { keep[id] = 1; continue; }
+    // nét mảnh ngắn, gọn: chữ thanh (nét ≥ 3 điểm, dày hơn nét gạch tranh 2 điểm) hoặc dấu/chấm sát nét chữ dày
+    if (diag <= 36 * k0 && ar[id] >= 8 && diag * diag <= 9 * ar[id] && (rm[id] >= 2 * k0 + 0.05 || inZ[id] >= 0.5 * ar[id])) keep[id] = 1;
+  }
+  if (dbg) { dbg.lab = lab; dbg.nc = nc; dbg.bd = bd; dbg.bigD = bigD; }
+  if (dbg) for (let id = 1; id <= nc; id++) { const diag = Math.hypot(x1[id] - x0[id] + 1, y1[id] - y0[id] + 1); dbg.push({ id, ar: ar[id], rm: rm[id], diag, E: diag * diag / ar[id], strong: strong[id], inZ: inZ[id], keep: keep[id], x0: x0[id], y0: y0[id], x1: x1[id], y1: y1[id] }); }
+  const core = new Uint8Array(n);                                  // thân chữ chắc chắn (nét dày, gọn, đủ lớn): dùng để biết chữ còn dài ra ngoài khung
+  for (let id = 1; id <= nc; id++) {
+    const diag = Math.hypot(x1[id] - x0[id] + 1, y1[id] - y0[id] + 1);
+    if (keep[id] && strong[id] && diag * diag <= 8.5 * ar[id] && ar[id] >= 40 * k0 * k0 / 0.444) ck[id] = 1;
+  }
+  // nét bị mép khung cắt ngang mà không phải thân chữ chắc chắn: là đoạn nét tranh (gạch, viền) vắt qua mép khung, không phải chữ
+  if (mask) {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x, id = lab[i];
+        if (!id || !keep[id] || ck[id]) continue;
+        if (x === 0 || y === 0 || x === w - 1 || y === h - 1 || !mask[i - 1] || !mask[i + 1] || !mask[i - w] || !mask[i + w]) keep[id] = 0;
+      }
+    }
+  }
+  for (let i = 0; i < n; i++) if (lab[i] && ck[lab[i]]) core[i] = 1;
+  for (let i = 0; i < n; i++) if (lab[i] && keep[lab[i]]) km[i] = 1;
+  const kd = boxDilate(km, w, h, 1);
+  for (let i = 0; i < n; i++) if (kd[i] && !(bigD && bigD[i] && !km[i])) out[i] = alpha[i];
+  out.core = core;
+  return out;
+}
+
 /* -------------------------------------------- xoá chữ Nhật + dán chữ Việt */
 function defaultOpt(ctx) {
   const k = Math.max(ctx.W, ctx.H) / 1800;
   return {
     fill: 'flat', tol: 30, inkGray: 110,
     grow: clamp(Math.round(3 * k), 2, 6), edge: clamp(Math.round(2 * k), 1, 5),
-    sens: 0, soft: 0.35, invert: 'auto', textColor: null, shiftX: 0, shiftY: 0,
+    sens: 0, soft: 0.35, invert: 'auto', textColor: null, colorMode: 'auto', thin: 'auto', halo: 'auto', shiftX: 0, shiftY: 0,
   };
 }
 
-function buildPatch(reg, ctx) {
+function buildPatchCore(reg, ctx) {
   const { W, H, rgba, gray, bw } = ctx;
   const o = Object.assign(defaultOpt(ctx), reg.opt || {});
   const { x: bx, y: by, w, h, mask } = reg;
@@ -1950,7 +2448,10 @@ function buildPatch(reg, ctx) {
   let bgR = sc ? Math.round(sr / sc) : 255, bgG = sc ? Math.round(sg / sc) : 255, bgB = sc ? Math.round(sb / sc) : 255;
   if (bgR >= 246 && bgG >= 246 && bgB >= 246) { bgR = bgG = bgB = 255; }
   const lumBg = (bgR * 77 + bgG * 150 + bgB * 29) >> 8;
-  const invert = o.invert === 'auto' ? lumBg < 100 : !!o.invert;
+  const k0h = Math.max(W, H) / 1800;
+  const hd = o.halo === 'off' ? null : detectHalo(crop, cg, mask, w, h, k0h, o.inkGray, !!reg.forceHalo);
+  const halo = !!(hd && hd.ok);                        // chữ đen viền trắng trên tranh: giữ tranh, vẽ lại chữ + viền
+  const invert = halo ? false : (o.invert === 'auto' ? lumBg < 100 : !!o.invert);
 
   // chữ gốc (ink)
   const ink = new Uint8Array(n);
@@ -1968,52 +2469,11 @@ function buildPatch(reg, ctx) {
       if (invert ? cg[i] > 255 - o.inkGray : cg[i] < o.inkGray) { ink[i] = 1; inkN++; }
     }
   }
-  let hole = ink;
-  if (o.fill === 'flat') {
-    hole = mask; // nền phẳng: tô lại toàn bộ vùng, xoá luôn vệt mờ do nén JPEG quanh chữ
-  } else if (o.grow > 0 && inkN) {
-    const nd = new Uint8Array(n);
-    for (let i = 0; i < n; i++) nd[i] = ink[i] ? 0 : 1;
-    const dist = distToZero(nd, w, h, false);
-    hole = new Uint8Array(n);
-    for (let i = 0; i < n; i++) if (mask[i] && dist[i] <= o.grow + 0.01) hole[i] = 1;
-  }
-
-  // màu chữ
-  let tcol;
-  if (o.textColor) tcol = o.textColor;
-  else {
-    tcol = invert ? [255, 255, 255] : [0, 0, 0];
-    if (inkN >= 24) {
-      const hist = new Uint32Array(256);
-      for (let i = 0; i < n; i++) if (ink[i]) hist[cg[i]]++;
-      const target = inkN * 0.3;
-      let acc = 0, cut = invert ? 0 : 255;
-      if (!invert) { for (let g = 0; g < 256; g++) { acc += hist[g]; if (acc >= target) { cut = g; break; } } }
-      else { for (let g = 255; g >= 0; g--) { acc += hist[g]; if (acc >= target) { cut = g; break; } } }
-      let r = 0, g2 = 0, b = 0, c = 0;
-      for (let i = 0; i < n; i++) {
-        if (!ink[i]) continue;
-        if (invert ? cg[i] >= cut : cg[i] <= cut) { const j = i << 2; r += crop[j]; g2 += crop[j + 1]; b += crop[j + 2]; c++; }
-      }
-      if (c) tcol = [Math.round(r / c), Math.round(g2 / c), Math.round(b / c)];
-    }
-  }
-
-  // xoá chữ gốc
-  if (o.fill === 'flat') {
-    for (let i = 0; i < n; i++) if (hole[i]) { const j = i << 2; crop[j] = bgR; crop[j + 1] = bgG; crop[j + 2] = bgB; }
-  } else {
-    inpaintPushPull(crop, w, h, hole, mask);
-  }
-
   // chữ Việt từ ảnh đen trắng
   const inside = distToZero(mask, w, h, true);
   const sx = (reg.autoX || 0) + (o.shiftX || 0), sy = (reg.autoY || 0) + (o.shiftY || 0);
   const fillV = invert ? 0 : 255;
   const hist2 = new Uint32Array(256);
-  const touched = new Uint8Array(n);
-  for (let i = 0; i < n; i++) if (hole[i]) touched[i] = 1;
   let textPx = 0, cnt = 0;
   const alpha = new Float32Array(n);
   const SS = (ctx.src && ctx.rect) ? supersampleFor(ctx) : 1;
@@ -2077,23 +2537,325 @@ function buildPatch(reg, ctx) {
     // chữ trên nền tranh: lọc các chấm tông nhỏ của ảnh đen trắng
     if (o.fill !== 'flat' && o.despeckle !== false) despeckle(alpha, w, h, Math.max(8, Math.round(10 * (Math.max(W, H) / 1800) ** 2)));
   }
+
+  if (reg.dbg) { reg.dbg.alpha = alpha; reg.dbg.crop = crop; reg.dbg.ink = ink; reg.dbg.cg = cg; reg.dbg.k = { w, h, bx, by }; }
+  // Vùng có nhiều nét MẢNH DÀI (tia tốc độ, nét gạch bóng…), kể cả khi khung đang ở chế độ tô phẳng: chỉ coi nét DÀY (chữ SFX) là chữ.
+  // Nét mảnh của ảnh màu được giữ nguyên (nên tranh không bị phá), nét mảnh của ảnh đen trắng không vẽ đè lên,
+  // trừ chỗ chữ Nhật vừa bị xoá (ở đó dùng nét của ảnh đen trắng để khôi phục tia).
+  // Khung thoại tự tìm (bubble/tint) tô phẳng có nền sạch nên không xét, trừ khi người dùng bật hẳn (thin = 'on').
+  let inkJ = ink, inkJN = inkN, drawOK = null, artC = false, blankB = null, lgC = 0, lgB = 0, cohC = 0, mAreaS = 0, inkRaw = null;
+  const autoFlat = (reg.kind === 'bubble' || reg.kind === 'tint') && o.fill === 'flat';
+  if (!halo && (o.thin === 'on' || (o.thin !== 'off' && !autoFlat))) {
+    const k0 = Math.max(W, H) / 1800, rc = Math.max(2.5, 3.75 * k0);
+    let mArea = 0; for (let i = 0; i < n; i++) if (mask[i]) mArea++;
+    mAreaS = mArea;
+    const minThick = Math.max(40, Math.round(60 * k0 * k0)), force = o.thin === 'on';
+    const Lmin = Math.max(36, 70 * k0), needLg = 0.035 * mArea, kLine = 30, minStroke = Math.round(12 * rc * rc);
+    const bd = new Uint8Array(n); let nBd = 0;
+    for (let i = 0; i < n; i++) if (alpha[i] >= 0.5) { bd[i] = 1; nBd++; }
+    const aSmall = Math.round(220 * k0 * k0);
+    const thinOf = (P, body) => { const t = new Uint8Array(n); for (let i = 0; i < n; i++) if (P[i] && !body[i]) t[i] = 1; return t; };
+    // mảng lớn của tranh (quầng sáng, mảng tối) không phải chữ: tạm bỏ khỏi "mực" (cả viền mờ quanh nó)
+    if (inkN) {
+      const rb = bigBlobs(ink, w, h, rc, 50 * k0 + 6);
+      if (rb) {
+        inkRaw = Uint8Array.from(ink);
+        const nz = new Uint8Array(n); for (let i = 0; i < n; i++) nz[i] = rb[i] ? 0 : 1;
+        const dr = distToZero(nz, w, h, false);
+        for (let i = 0; i < n; i++) if (ink[i] && dr[i] <= 3.01) { ink[i] = 0; inkN--; inkJN--; }
+      }
+    }
+    if (inkN) {
+      const tc = strokeBody(ink, bd, w, h, rc, aSmall, kLine);
+      const lt = longThin(thinOf(ink, tc.body), w, h, Lmin);
+      lgC = lt.area;
+      // tia tốc độ: nhiều nét mảnh dài và CÙNG HƯỚNG (gạch, viền khung, chữ mảnh thì không)
+      if (lgC >= needLg) cohC = lineCoherence(cg, lt.mask, w, h);
+      if (tc.n >= minThick && tc.maxA >= minStroke && (force || (lgC >= needLg && cohC >= 0.45))) { inkJ = tc.body; inkJN = tc.n; artC = true; }
+    }
+    if (nBd && (force || artC)) {
+      const tb = strokeBody(bd, ink, w, h, rc, aSmall, kLine);
+      if (tb.n >= minThick && tb.maxA >= minStroke) {
+        // nét mảnh của ảnh đen trắng chỉ bị chặn khi ảnh màu giữ tia của nó (artC) hoặc người dùng bật hẳn
+        {
+          const nz = new Uint8Array(n); for (let i = 0; i < n; i++) nz[i] = tb.body[i] ? 0 : 1;
+          const dnear = distToZero(nz, w, h, false);
+          drawOK = new Uint8Array(n);
+          for (let i = 0; i < n; i++) if (dnear[i] <= 2.5) drawOK[i] = 1;
+          // ruột chữ Việt: vùng trống rộng của ảnh đen trắng (không có tia, không có nét) → tia/nét tranh màu nằm trong đó bị xoá
+          const lt = new Uint8Array(n);
+          for (let i = 0; i < n; i++) if (mask[i] && inside[i] >= o.edge && alpha[i] < 0.05) lt[i] = 1;
+          const tl = thickBody(lt, w, h, Math.max(4, 6 * k0));
+          if (tl.n) {
+            const { lab, n: nc } = labelComponents(tl.body, w, h), ns = nearestSrc(tl.body, w, h);
+            const area = new Float64Array(nc + 1), tot = new Float64Array(nc + 1), thk = new Float64Array(nc + 1);
+            for (let i = 0; i < n; i++) if (tl.body[i]) area[lab[i]]++;
+            for (let i = 0; i < n; i++) {
+              if (!bd[i]) continue;
+              const q = ns.idx[i]; if (q < 0 || ns.d2[i] > 9) continue;
+              const id = lab[q]; tot[id]++; if (tb.body[i]) thk[id]++;
+            }
+            const minBlank = Math.round(150 * k0 * k0);
+            const keep = new Uint8Array(nc + 1);
+            for (let id = 1; id <= nc; id++) if (area[id] >= minBlank && tot[id] > 0 && thk[id] >= 0.6 * tot[id]) keep[id] = 1;
+            blankB = new Uint8Array(n); let any = 0;
+            for (let i = 0; i < n; i++) if (tl.body[i] && keep[lab[i]]) { blankB[i] = 1; any++; }
+            if (!any) blankB = null;
+          }
+        }
+      }
+    }
+  }
+  if (inkRaw && !artC) { ink.set(inkRaw); inkN = 0; for (let i = 0; i < n; i++) if (ink[i]) inkN++; inkJN = inkN; }
+  const flatFull = o.fill === 'flat' && !artC && !halo;   // tô phẳng cả khung (không có tia để giữ)
+  let hole = inkJ;
+  if (halo) {
+    // xoá nét chữ Nhật + quầng trắng quanh nó (nở 2 điểm lấy cả viền mờ); tranh quanh đó được nội suy vào chỗ trống
+    const T = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (hd.G[i] || hd.C[i] || hd.Gd[i]) T[i] = 1;
+    const Td = boxDilate(T, w, h, 2);
+    hole = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (mask[i] && Td[i]) hole[i] = 1;
+  } else if (flatFull) {
+    hole = mask; // nền phẳng: tô lại toàn bộ vùng, xoá luôn vệt mờ do nén JPEG quanh chữ
+  } else if (o.grow > 0 && inkJN) {
+    const nd = new Uint8Array(n);
+    for (let i = 0; i < n; i++) nd[i] = inkJ[i] ? 0 : 1;
+    const dist = distToZero(nd, w, h, false);
+    hole = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (mask[i] && dist[i] <= o.grow + 0.01) hole[i] = 1;
+  }
+  if (blankB && !flatFull) {
+    // nét tối của ảnh màu nằm trong ruột chữ Việt: xoá (nở thêm để lấy cả viền mờ), nền lấy từ chỗ sáng xung quanh
+    const nd = new Uint8Array(n);
+    for (let i = 0; i < n; i++) nd[i] = ink[i] && blankB[i] ? 0 : 1;
+    const dist = distToZero(nd, w, h, false);
+    if (hole === inkJ) hole = Uint8Array.from(hole);
+    for (let i = 0; i < n; i++) if (blankB[i] && dist[i] <= o.grow + 0.01) hole[i] = 1;
+  }
+  const touched = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (hole[i]) touched[i] = 1;
+  if (drawOK) for (let i = 0; i < n; i++) if (hole[i]) drawOK[i] = 1;
+  if (reg.dbg) { reg.dbg.hd = hd; reg.dbg.hole = hole; reg.dbg.mask = mask; }
+
+  // màu chữ (lấy từ mực riêng của chữ Nhật; nếu quá ít thì lấy cả nét chung)
+  const csrc = inkJN >= 24 ? inkJ : ink, csrcN = inkJN >= 24 ? inkJN : inkN;
+  let tcol;
+  if (o.textColor) tcol = o.textColor;
+  else if (halo) tcol = hd.glyphCol;
+  else {
+    tcol = invert ? [255, 255, 255] : [0, 0, 0];
+    if (csrcN >= 24) {
+      const hist = new Uint32Array(256);
+      for (let i = 0; i < n; i++) if (csrc[i]) hist[cg[i]]++;
+      const target = csrcN * 0.3;
+      let acc = 0, cut = invert ? 0 : 255;
+      if (!invert) { for (let g = 0; g < 256; g++) { acc += hist[g]; if (acc >= target) { cut = g; break; } } }
+      else { for (let g = 255; g >= 0; g--) { acc += hist[g]; if (acc >= target) { cut = g; break; } } }
+      let r = 0, g2 = 0, b = 0, c = 0;
+      for (let i = 0; i < n; i++) {
+        if (!csrc[i]) continue;
+        if (invert ? cg[i] >= cut : cg[i] <= cut) { const j = i << 2; r += crop[j]; g2 += crop[j + 1]; b += crop[j + 2]; c++; }
+      }
+      if (c) tcol = [Math.round(r / c), Math.round(g2 / c), Math.round(b / c)];
+    }
+  }
+
+  // màu chữ theo từng nét gốc (chữ gốc có màu: SFX xanh ngọc, hồng…); chữ đen giữ nguyên cách một màu
+  const tmap = (!halo && !o.textColor && o.colorMode !== 'single' && !invert) ? localInkColors(crop, csrc, cg, w, h, Math.max(W, H) / 1800, mask) : null;
+
+  // xoá chữ gốc
+  if (flatFull) {
+    for (let i = 0; i < n; i++) if (hole[i]) { const j = i << 2; crop[j] = bgR; crop[j + 1] = bgG; crop[j + 2] = bgB; }
+  } else {
+    let known = mask;
+    if (artC) { known = new Uint8Array(n); for (let i = 0; i < n; i++) known[i] = mask[i] && !ink[i] ? 1 : 0; }
+    inpaintPushPull(crop, w, h, hole, known);
+  }
+
+  let alphaD = alpha, haloPx = 0;
+  const haloTouch = { l: 0, t: 0, r: 0, b: 0 };
+  if (halo) {
+    // chỉ vẽ nét chữ Việt (bỏ mảng đen/nét tranh của ảnh đen trắng) và viền trắng quanh nó, bề rộng bằng quầng của chữ Nhật
+    if (reg.dbg) reg.dbg.pk = [];
+    alphaD = pickGlyphB(alpha, w, h, k0h, reg.dbg ? reg.dbg.pk : null, mask);
+    if (reg.dbg) reg.dbg.alphaD = alphaD;
+    // nét chữ Việt chạm mép khung (chữ có thể còn dài ra ngoài): đếm theo từng cạnh
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!mask[i] || !alphaD.core[i]) continue;
+        if (x === 0 || !mask[i - 1]) haloTouch.l++;
+        if (x === w - 1 || !mask[i + 1]) haloTouch.r++;
+        if (y === 0 || !mask[i - w]) haloTouch.t++;
+        if (y === h - 1 || !mask[i + w]) haloTouch.b++;
+      }
+    }
+    const nz = new Uint8Array(n);
+    for (let i = 0; i < n; i++) nz[i] = alphaD[i] >= 0.5 ? 0 : 1;
+    const dB = distToZero(nz, w, h, false), hc = hd.haloCol;
+    for (let i = 0; i < n; i++) {
+      if (!mask[i]) continue;
+      const t = hd.hw + 0.5 - dB[i];
+      if (t <= 0) continue;
+      const ha = t >= 1 ? 1 : t, j = i << 2;
+      crop[j] += (hc[0] - crop[j]) * ha; crop[j + 1] += (hc[1] - crop[j + 1]) * ha; crop[j + 2] += (hc[2] - crop[j + 2]) * ha;
+      touched[i] = 1; haloPx++;
+    }
+  }
   for (let i = 0; i < n; i++) {
-    const a = alpha[i];
+    const a = alphaD[i];
     if (a < 0.004) continue;
+    if (drawOK && !drawOK[i]) continue;   // nét mảnh của ảnh đen trắng (tia tốc độ…): không vẽ đè lên tranh màu
     const j = i << 2;
-    crop[j] += (tcol[0] - crop[j]) * a;
-    crop[j + 1] += (tcol[1] - crop[j + 1]) * a;
-    crop[j + 2] += (tcol[2] - crop[j + 2]) * a;
+    const t0 = tmap ? tmap.R[i] : tcol[0], t1 = tmap ? tmap.G[i] : tcol[1], t2 = tmap ? tmap.B[i] : tcol[2];
+    crop[j] += (t0 - crop[j]) * a;
+    crop[j + 1] += (t1 - crop[j + 1]) * a;
+    crop[j + 2] += (t2 - crop[j + 2]) * a;
     touched[i] = 1; textPx++;
   }
   for (let i = 0; i < n; i++) crop[(i << 2) + 3] = touched[i] ? 255 : 0;
-  return { x: bx, y: by, w, h, data: crop, stats: { inkN, bg: [bgR, bgG, bgB], text: tcol, invert, bwBg, bwInk, span, textPx } };
+  return { x: bx, y: by, w, h, data: crop, stats: { halo, haloTouch, haloTouchJ: halo ? hd.touchJ : null, hw: halo ? hd.hw : 0, nG: halo ? hd.nG : 0, haloPx, haloWhy: hd ? hd.why : 'tắt', inkN, inkJ: inkJN, artC, artB: !!drawOK, lgC, lgB, cohC, mArea: mAreaS, flatFull, bg: [bgR, bgG, bgB], text: tcol, local: !!tmap, invert, bwBg, bwInk, span, textPx } };
+}
+
+// Mở rộng khung: mỗi cạnh ra thêm M.l/t/r/b điểm (mặt nạ giãn tương ứng, không vượt ảnh). Trả thêm số điểm thực sự nới.
+function expandRegion(reg, M, W, H) {
+  const ml = Math.min(M.l, reg.x), mt = Math.min(M.t, reg.y);
+  const mr = Math.min(M.r, W - (reg.x + reg.w)), mb = Math.min(M.b, H - (reg.y + reg.h));
+  const x0 = reg.x - ml, y0 = reg.y - mt, w2 = reg.w + ml + mr, h2 = reg.h + mt + mb;
+  const m0 = new Uint8Array(w2 * h2);
+  for (let y = 0; y < reg.h; y++) for (let x = 0; x < reg.w; x++) if (reg.mask[y * reg.w + x]) m0[(y + mt) * w2 + x + ml] = 1;
+  return Object.assign({}, reg, { x: x0, y: y0, w: w2, h: h2, mask: boxDilateAsym(m0, w2, h2, ml, mt, mr, mb), expanded: true, got: { l: ml, t: mt, r: mr, b: mb } });
+}
+
+// Xoá chữ Nhật + dán chữ Việt cho một khung. Chữ đen viền trắng đè lên tranh (halo): nới khung dần ở những cạnh mà chữ Việt
+// còn chạm mép (chữ Việt thường dài hơn chữ Nhật), tối đa ~20 điểm; nếu sau khi nới không còn nhận ra halo thì dùng khung gốc.
+// Dò chữ đen viền trắng đè lên tranh cho một khung. Khung tự tìm thường chỉ ôm mảnh quầng trắng (không thấy tranh quanh nó):
+// thử lại với một vành tranh quanh khung. Trả { ok, base (khung dùng để nới), d (kết quả detectHalo) }.
+function haloProbe(reg, ctx, inkGray) {
+  const { W, H, rgba, gray } = ctx;
+  const k0 = Math.max(W, H) / 1800, R = Math.max(8, Math.round(24 * k0));
+  // chỉ phụ thuộc ảnh màu + mặt nạ khung (không đổi khi căn lại ảnh đen trắng) nên nhớ lại kết quả trên khung
+  const c = reg._hp;
+  if (c && c.mask === reg.mask && c.ink === inkGray && c.W === W && c.H === H && c.x === reg.x && c.y === reg.y) {
+    return { ok: c.ok, base: c.ring ? expandRegion(reg, { l: R, t: R, r: R, b: R }, W, H) : reg, d: { ok: c.ok, why: c.why } };
+  }
+  const probe = (r) => {
+    const { x: bx, y: by, w, h } = r;
+    const crop = new Uint8ClampedArray(w * h * 4), cg = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+      const s = ((by + y) * W + bx) * 4;
+      crop.set(rgba.subarray(s, s + w * 4), y * w * 4);
+      cg.set(gray.subarray((by + y) * W + bx, (by + y) * W + bx + w), y * w);
+    }
+    return detectHalo(crop, cg, r.mask, w, h, k0, inkGray);
+  };
+  let base = reg, d = probe(reg), ring = false;
+  if (!d.ok && d.why === 'không có tranh') {
+    const g = expandRegion(reg, { l: R, t: R, r: R, b: R }, W, H);
+    const d2 = probe(g);
+    if (d2.ok) { base = g; d = d2; ring = true; }
+  }
+  Object.defineProperty(reg, '_hp', { value: { mask: reg.mask, ink: inkGray, W, H, x: reg.x, y: reg.y, ok: d.ok, why: d.why, ring }, writable: true, configurable: true, enumerable: false });
+  return { ok: d.ok, base, d: { ok: d.ok, why: d.why } };
+}
+
+// Gộp các mảnh quầng của CÙNG một khối chữ đen viền trắng (khung tự tìm chỉ ôm từng mảnh quầng, nhiều mảnh chồng lên nhau và
+// vẽ đè nhau) thành một khung cho mỗi khối: mảnh nào dò ra chữ viền trắng trên tranh và có vành tranh chạm nhau thì gộp mặt nạ.
+function mergeHaloFragments(regs, ctx) {
+  const { W, H } = ctx;
+  const k0 = Math.max(W, H) / 1800, R = Math.max(8, Math.round(24 * k0));
+  const inkGray = defaultOpt(ctx).inkGray;
+  const hs = [];
+  regs.forEach((r, idx) => {
+    if (r.kind !== 'bubble') return;
+    const pr = haloProbe(r, ctx, inkGray);
+    if (pr.ok) hs.push({ idx, r });
+  });
+  if (hs.length < 2) return regs;
+  const par = hs.map((_, i) => i);
+  const find = (i) => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+  for (let i = 0; i < hs.length; i++) {
+    for (let j = i + 1; j < hs.length; j++) {
+      const a = hs[i].r, b = hs[j].r;
+      if (a.x - R < b.x + b.w + R && b.x - R < a.x + a.w + R && a.y - R < b.y + b.h + R && b.y - R < a.y + a.h + R) par[find(i)] = find(j);
+    }
+  }
+  const groups = new Map();
+  hs.forEach((h, i) => { const g = find(i); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(h); });
+  const drop = new Set(), repl = new Map();
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    g.sort((p, q) => p.idx - q.idx);
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, area = 0, whiteArea = 0;
+    for (const { r } of g) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); area += r.area || 0; whiteArea += r.whiteArea || 0; }
+    const w = x1 - x0, h = y1 - y0, mask = new Uint8Array(w * h);
+    for (const { r } of g) for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) if (r.mask[y * r.w + x]) mask[(r.y - y0 + y) * w + r.x - x0 + x] = 1;
+    const first = g[0].r;
+    repl.set(g[0].idx, Object.assign({}, first, { x: x0, y: y0, w, h, mask, area, whiteArea, merged: g.length }));
+    for (let k = 1; k < g.length; k++) drop.add(g[k].idx);
+  }
+  if (!repl.size) return regs;
+  const out = [];
+  regs.forEach((r, idx) => { if (drop.has(idx)) return; out.push(repl.has(idx) ? repl.get(idx) : r); });
+  return out;
+}
+
+function buildPatch(reg, ctx) {
+  const { W, H } = ctx;
+  const o = Object.assign(defaultOpt(ctx), reg.opt || {});
+  if (o.halo !== 'off' && !reg.expanded) {
+    const k0 = Math.max(W, H) / 1800;
+    const { base, d } = haloProbe(reg, ctx, o.inkGray);
+    if (d.ok) {
+      // nới khung từng cạnh một: chỉ ở cạnh mà chữ Việt (hoặc chữ Nhật) còn chạm mép; mỗi lần nới phải lấy thêm được nét chữ
+      // (Việt hoặc Nhật) mới thì mới nhận (chạm mép do nét tranh/nhiễu không làm khung phình mãi); mất nhận diện thì bỏ cạnh đó
+      const step = Math.max(4, Math.round(8 * k0)), Mmax = Math.max(16, Math.round(84 * k0));
+      const gmin = Math.max(8, Math.round(14 * k0 * k0));
+      let M = { l: 0, t: 0, r: 0, b: 0 };
+      const blocked = { l: 0, t: 0, r: 0, b: 0 };
+      const run = (MM) => {
+        const ex = expandRegion(base, MM, W, H);
+        ex.forceHalo = true;                       // đã nhận ra halo ở khung gốc; nới ra không cần chứng minh lại
+        if (reg.dbg) ex.dbg = reg.dbg;
+        const p = buildPatchCore(ex, ctx);
+        if (reg.dbg) (reg.dbg.iter = reg.dbg.iter || []).push({ M: Object.assign({}, MM), got: ex.got, halo: p.stats.halo, why: p.stats.haloWhy, t: p.stats.haloTouch, tj: p.stats.haloTouchJ, textPx: p.stats.textPx, nG: p.stats.nG });
+        p.stats.got = ex.got;
+        return p;
+      };
+      let best = run(M);
+      if (best.stats.halo) {
+        for (let it = 0; it < 40; it++) {
+          const t = best.stats.haloTouch, tj = best.stats.haloTouchJ;
+          let moved = false;
+          for (const k of ['l', 't', 'r', 'b']) {
+            if (blocked[k] || M[k] >= Mmax || !(t[k] >= 3 || tj[k] >= 4)) continue;
+            if (best.stats.got[k] < M[k]) { blocked[k] = 1; continue; }      // đã chạm mép ảnh
+            for (const mul of [1, 2]) {              // bước thường, rồi bước gấp đôi (chữ cách mép một khoảng trống)
+              const M2 = Object.assign({}, M, { [k]: Math.min(Mmax, M[k] + step * mul) });
+              if (M2[k] === M[k]) break;
+              const p = run(M2);
+              const gain = (p.stats.textPx - best.stats.textPx) + (p.stats.nG - best.stats.nG);
+              if (p.stats.halo && gain >= gmin) { M = M2; best = p; moved = true; break; }
+              if (!p.stats.halo) break;
+            }
+            if (moved) break;
+            blocked[k] = 1;
+          }
+          if (!moved) break;
+        }
+        return best;
+      }
+    }
+  }
+  return buildPatchCore(reg, ctx);
 }
 
 G.GCV = {
   clamp, rgbaToGray, colorfulness, resizeArea, alignImages, refineWarp, renderAligned, mapToBw, prepSource, cubicAt, warpAt,
   distToZero, fillHoles, floodScan, regionFromSpans, regionFromRect, regionFromPolygon,
   floodRegionAt, detectRegions, analyzeRegion, snapRegion, inpaintPushPull, defaultOpt, buildPatch,
+  nearestSrc, localInkColors, thickBody, strokeBody, bigBlobs, dropArtFragments, labelComponents, longThin, longThinArea, lineCoherence, boxDilate, boxDilateAsym, detectHalo, pickGlyphB, buildPatchCore, expandRegion, haloProbe, mergeHaloFragments,
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = G.GCV;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
@@ -2545,8 +3307,12 @@ function renderInspector() {
   $('inDx').value = -(o.shiftX || 0); $('inDy').value = -(o.shiftY || 0);
   $('inAutoColor').checked = !o.textColor;
   $('inColor').disabled = !!(!o.textColor);
+  $('inLocalColor').checked = o.colorMode !== 'single';
+  $('rowLocal').hidden = !!o.textColor;
   if (o.textColor) $('inColor').value = '#' + o.textColor.map((v) => v.toString(16).padStart(2, '0')).join('');
   $('inInvert').value = o.invert === 'auto' ? 'auto' : (o.invert ? 'on' : 'off');
+  $('inHalo').checked = o.halo !== 'off';
+  $('inThin').value = o.thin || 'auto';
 }
 function patchOpt(change) {
   const r = selected();
@@ -3281,7 +4047,10 @@ function wire() {
     renderInspector();
   });
   $('inColor').addEventListener('input', (e) => patchOpt({ textColor: hexRgb(e.target.value) }));
+  $('inLocalColor').addEventListener('change', (e) => patchOpt({ colorMode: e.target.checked ? 'auto' : 'single' }));
   $('inInvert').addEventListener('change', (e) => patchOpt({ invert: e.target.value === 'auto' ? 'auto' : e.target.value === 'on' }));
+  $('inHalo').addEventListener('change', (e) => patchOpt({ halo: e.target.checked ? 'auto' : 'off' }));
+  $('inThin').addEventListener('change', (e) => patchOpt({ thin: e.target.value }));
   $('inDelete').addEventListener('click', () => { const r = selected(); if (r) removeRegion(r.id); });
 
   // xuất ảnh

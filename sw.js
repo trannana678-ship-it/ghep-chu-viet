@@ -1,4 +1,4 @@
-const CACHE = 'ghep-chu-viet-v1';
+const CACHE = 'ghep-chu-viet-v2';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
